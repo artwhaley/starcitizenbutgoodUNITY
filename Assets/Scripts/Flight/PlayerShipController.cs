@@ -174,6 +174,7 @@ namespace FlightModel
 
             visuals.TryAutoWire();
             ShipHierarchyUtility.DisableMeshColliders(visuals.transform);
+            DisablePlayerShipMotionVectors(visuals.transform);
 
             if (weapon != null)
             {
@@ -206,6 +207,24 @@ namespace FlightModel
             }
 
             engineGlowVfx.Configure(visuals, input, enginePlumePrefab);
+        }
+
+        static void DisablePlayerShipMotionVectors(Transform visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer != null)
+                {
+                    renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+                }
+            }
         }
     }
 }

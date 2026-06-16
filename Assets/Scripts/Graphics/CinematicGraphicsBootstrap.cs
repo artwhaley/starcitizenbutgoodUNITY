@@ -73,11 +73,11 @@ namespace FlightModel
 
             MotionBlur motionBlur = profile.Add<MotionBlur>(true);
             motionBlur.intensity.overrideState = true;
-            motionBlur.intensity.value = 0.18f;
+            motionBlur.intensity.value = 0.08f;
             motionBlur.clamp.overrideState = true;
-            motionBlur.clamp.value = 0.045f;
+            motionBlur.clamp.value = 0.025f;
             motionBlur.quality.overrideState = true;
-            motionBlur.quality.value = MotionBlurQuality.High;
+            motionBlur.quality.value = MotionBlurQuality.Medium;
 
             Vignette vignette = profile.Add<Vignette>(true);
             vignette.intensity.overrideState = true;
