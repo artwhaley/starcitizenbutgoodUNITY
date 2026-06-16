@@ -1,0 +1,9 @@
+{
+  "axisBindings": [],
+  "firePrimary": {
+    "devicePath": "",
+    "displayName": "",
+    "buttonIndex": 0,
+    "enabled": false
+  }
+}
