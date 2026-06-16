@@ -8,8 +8,9 @@ namespace FlightModel
         [SerializeField] ShipInputReader input;
         [SerializeField] GameObject plumePrefab;
         [SerializeField] float inputThreshold = 0.05f;
-        [SerializeField] float plumeEmissionRate = 48f;
+        [SerializeField] float plumeEmissionRate = 82f;
         [SerializeField] float boostEmissionMultiplier = 2.2f;
+        [SerializeField] float plumeSpawnOffset = 0.28f;
         [SerializeField] Color plumeColor = new(0.6f, 0.88f, 1f, 0.9f);
 
         ParticleSystem[] plumes;
@@ -83,11 +84,12 @@ namespace FlightModel
         void AlignPlumeTransform(Transform plumeTransform, Transform engineNode)
         {
             Transform outwardFrom = visuals.Cog != null ? visuals.Cog : visuals.transform;
-            plumeTransform.localPosition = Vector3.zero;
-            plumeTransform.localRotation = BlenderImportedAxes.GetPlumeLocalRotation(
+            Quaternion plumeRotation = BlenderImportedAxes.GetPlumeLocalRotation(
                 engineNode,
                 visuals.MarkerActionAxisLocal,
                 outwardFrom);
+            plumeTransform.localRotation = plumeRotation;
+            plumeTransform.localPosition = plumeRotation * (Vector3.forward * plumeSpawnOffset);
             plumeTransform.localScale = Vector3.one;
         }
 

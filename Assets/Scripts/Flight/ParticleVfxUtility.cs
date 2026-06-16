@@ -88,8 +88,8 @@ namespace FlightModel
             if (profile == GasPlumeProfile.Engine)
             {
                 renderer.renderMode = ParticleSystemRenderMode.Stretch;
-                renderer.lengthScale = 3.2f;
-                renderer.velocityScale = 0.35f;
+                renderer.lengthScale = 1.85f;
+                renderer.velocityScale = 0.18f;
                 renderer.cameraVelocityScale = 0f;
             }
             else
@@ -134,13 +134,13 @@ namespace FlightModel
             main.emitterVelocityMode = ParticleSystemEmitterVelocityMode.Transform;
             main.startLifetime = isRcs
                 ? new ParticleSystem.MinMaxCurve(0.14f, 0.28f)
-                : new ParticleSystem.MinMaxCurve(0.34f, 0.82f);
+                : new ParticleSystem.MinMaxCurve(0.2f, 0.46f);
             main.startSpeed = isRcs
                 ? new ParticleSystem.MinMaxCurve(9f, 16f)
-                : new ParticleSystem.MinMaxCurve(10f, 18f);
+                : new ParticleSystem.MinMaxCurve(5.5f, 10.5f);
             main.startSize = isRcs
                 ? new ParticleSystem.MinMaxCurve(0.07f, 0.16f)
-                : new ParticleSystem.MinMaxCurve(0.22f, 0.7f);
+                : new ParticleSystem.MinMaxCurve(0.34f, 0.82f);
             main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
             main.maxParticles = isRcs ? 320 : 640;
             main.startColor = isRcs
@@ -216,16 +216,16 @@ namespace FlightModel
                     new Keyframe(0f, 1.25f),
                     new Keyframe(1f, 0.72f)))
                 : new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
-                    new Keyframe(0f, 1.2f),
-                    new Keyframe(1f, 0.42f)));
+                    new Keyframe(0f, 0.98f),
+                    new Keyframe(1f, 0.24f)));
 
             var limitVelocity = particleSystem.limitVelocityOverLifetime;
             limitVelocity.enabled = true;
-            limitVelocity.dampen = isRcs ? 0.08f : 0.05f;
-            limitVelocity.drag = isRcs ? 0.25f : 0.28f;
+            limitVelocity.dampen = isRcs ? 0.08f : 0.12f;
+            limitVelocity.drag = isRcs ? 0.25f : 0.42f;
             limitVelocity.multiplyDragByParticleSize = false;
             limitVelocity.multiplyDragByParticleVelocity = true;
-            limitVelocity.limit = isRcs ? 24f : 18f;
+            limitVelocity.limit = isRcs ? 24f : 11f;
 
             var noise = particleSystem.noise;
             noise.enabled = true;
@@ -252,10 +252,10 @@ namespace FlightModel
             }
             else
             {
-                trails.ratio = 0.55f;
-                trails.lifetime = new ParticleSystem.MinMaxCurve(0.16f, 0.34f);
+                trails.ratio = 0.28f;
+                trails.lifetime = new ParticleSystem.MinMaxCurve(0.05f, 0.13f);
                 trails.widthOverTrail = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
-                    new Keyframe(0f, 0.6f),
+                    new Keyframe(0f, 0.38f),
                     new Keyframe(1f, 0f)));
                 trails.colorOverTrail = gradient;
             }
