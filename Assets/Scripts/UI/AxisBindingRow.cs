@@ -20,6 +20,9 @@ namespace FlightModel
         JoystickInputProvider provider;
         System.Action onChanged;
         Text rawValueText;
+        Text deadzoneLabelText;
+        Text scaleLabelText;
+        Text curveLabelText;
         Text deadzoneValueText;
         Text scaleValueText;
         Text curveValueText;
@@ -47,16 +50,19 @@ namespace FlightModel
             ConfigureSlider(scaleSlider, 0.1f, 3f, 0.5f);
             ConfigureSlider(curveSlider, 0.25f, 4f, 1f);
             rawValueText = EnsureText("RawValue", 16, TextAnchor.MiddleLeft);
-            deadzoneValueText = EnsureValueText(deadzoneSlider, "DeadzoneValue");
-            scaleValueText = EnsureValueText(scaleSlider, "GainValue");
-            curveValueText = EnsureValueText(curveSlider, "CurveValue");
+            deadzoneLabelText = EnsureText("DeadzoneLabel", 16, TextAnchor.MiddleLeft);
+            scaleLabelText = EnsureText("GainLabel", 16, TextAnchor.MiddleLeft);
+            curveLabelText = EnsureText("ExponentLabel", 16, TextAnchor.MiddleLeft);
+            deadzoneValueText = EnsureText("DeadzoneValue", 16, TextAnchor.MiddleRight);
+            scaleValueText = EnsureText("GainValue", 16, TextAnchor.MiddleRight);
+            curveValueText = EnsureText("ExponentValue", 16, TextAnchor.MiddleRight);
             deadzoneInput = EnsureNumberInput("DeadzoneInput");
             scaleInput = EnsureNumberInput("GainInput");
             curveInput = EnsureNumberInput("CurveInput");
             LayoutRowControls();
-            LayoutCalibrationControl("Deadzone", deadzoneSlider, deadzoneValueText, deadzoneInput, 122f);
-            LayoutCalibrationControl("Gain", scaleSlider, scaleValueText, scaleInput, 160f);
-            LayoutCalibrationControl("Exponent", curveSlider, curveValueText, curveInput, 198f);
+            LayoutCalibrationControl(deadzoneLabelText, "Deadzone", deadzoneSlider, deadzoneValueText, deadzoneInput, 116f);
+            LayoutCalibrationControl(scaleLabelText, "Gain", scaleSlider, scaleValueText, scaleInput, 156f);
+            LayoutCalibrationControl(curveLabelText, "Exponent", curveSlider, curveValueText, curveInput, 196f);
 
             if (labelText != null)
             {
@@ -242,7 +248,7 @@ namespace FlightModel
         {
             if (deadzoneValueText != null && deadzoneSlider != null)
             {
-                deadzoneValueText.text = $"Deadzone {deadzoneSlider.value:0.00}";
+                deadzoneValueText.text = $"{deadzoneSlider.value:0.00}";
             }
 
             if (deadzoneInput != null && deadzoneSlider != null && !deadzoneInput.isFocused)
@@ -252,7 +258,7 @@ namespace FlightModel
 
             if (scaleValueText != null && scaleSlider != null)
             {
-                scaleValueText.text = $"Gain {scaleSlider.value:0.00}";
+                scaleValueText.text = $"{scaleSlider.value:0.00}";
             }
 
             if (scaleInput != null && scaleSlider != null && !scaleInput.isFocused)
@@ -262,7 +268,7 @@ namespace FlightModel
 
             if (curveValueText != null && curveSlider != null)
             {
-                curveValueText.text = $"Exponent {curveSlider.value:0.00}";
+                curveValueText.text = $"{curveSlider.value:0.00}";
             }
 
             if (curveInput != null && curveSlider != null && !curveInput.isFocused)
@@ -276,10 +282,9 @@ namespace FlightModel
             SetStretchTop(labelText != null ? labelText.rectTransform : null, 12f, 10f, 12f, 28f);
             SetStretchTop(deviceDropdown != null ? deviceDropdown.transform as RectTransform : null, 12f, 44f, 12f, 40f);
             SetStretchTop(axisDropdown != null ? axisDropdown.transform as RectTransform : null, 12f, 88f, 12f, 40f);
-            SetStretchTop(invertToggle != null ? invertToggle.transform as RectTransform : null, 12f, 132f, 12f, 34f);
-            SetStretchTop(rawValueText != null ? rawValueText.rectTransform : null, 12f, 170f, 210f, 24f);
-            SetStretchTop(liveValueText != null ? liveValueText.rectTransform : null, 210f, 170f, 12f, 24f);
-            SetStretchTop(liveBar != null ? liveBar.transform as RectTransform : null, 12f, 198f, 12f, 22f);
+            SetStretchTop(rawValueText != null ? rawValueText.rectTransform : null, 12f, 132f, 220f, 24f);
+            SetStretchTop(liveValueText != null ? liveValueText.rectTransform : null, 220f, 132f, 12f, 24f);
+            SetStretchTop(invertToggle != null ? invertToggle.transform as RectTransform : null, 12f, 166f, 12f, 34f);
 
             if (labelText != null)
             {
@@ -296,7 +301,7 @@ namespace FlightModel
                 liveValueText.color = new Color(0.72f, 1f, 0.86f);
             }
 
-            StyleLiveBar();
+            HideLiveBar();
         }
 
         static void SetStretchTop(RectTransform rect, float left, float top, float right, float height)
@@ -313,28 +318,35 @@ namespace FlightModel
             rect.offsetMax = new Vector2(-right, -top);
         }
 
-        void LayoutCalibrationControl(string label, Slider slider, Text text, InputField input, float top)
+        void LayoutCalibrationControl(Text labelText, string label, Slider slider, Text valueText, InputField input, float top)
         {
-            RectTransform sliderRect = slider != null ? slider.transform as RectTransform : null;
-            SetStretchTop(sliderRect, 112f, top + 20f, 94f, 18f);
-            SetStretchTop(text != null ? text.rectTransform : null, 12f, top, 94f, 20f);
-            SetStretchTop(input != null ? input.transform as RectTransform : null, 0f, top + 3f, 12f, 34f);
+            SetStretchTop(labelText != null ? labelText.rectTransform : null, 12f, top, 330f, 34f);
+            SetStretchTop(input != null ? input.transform as RectTransform : null, 116f, top, 264f, 34f);
+            SetStretchTop(slider != null ? slider.transform as RectTransform : null, 220f, top + 8f, 78f, 18f);
+            SetStretchTop(valueText != null ? valueText.rectTransform : null, 0f, top, 12f, 34f);
 
-            if (text != null)
+            if (labelText != null)
             {
-                text.text = label;
-                text.fontSize = 15;
-                text.alignment = TextAnchor.MiddleLeft;
+                labelText.text = label;
+                labelText.fontSize = 16;
+                labelText.fontStyle = FontStyle.Bold;
+                labelText.color = Color.white;
             }
 
             if (input != null)
             {
-                RectTransform rect = input.transform as RectTransform;
-                rect.anchorMin = new Vector2(1f, 1f);
-                rect.anchorMax = new Vector2(1f, 1f);
-                rect.pivot = new Vector2(1f, 1f);
-                rect.sizeDelta = new Vector2(76f, 34f);
-                rect.anchoredPosition = new Vector2(-12f, -top - 2f);
+                Text text = input.textComponent;
+                if (text != null)
+                {
+                    text.fontStyle = FontStyle.Bold;
+                }
+            }
+
+            if (valueText != null)
+            {
+                valueText.fontSize = 16;
+                valueText.alignment = TextAnchor.MiddleRight;
+                valueText.color = new Color(0.76f, 0.86f, 0.95f);
             }
         }
 
@@ -354,17 +366,14 @@ namespace FlightModel
             }
         }
 
-        void StyleLiveBar()
+        void HideLiveBar()
         {
             if (liveBar == null)
             {
                 return;
             }
 
-            liveBar.interactable = false;
-            liveBar.minValue = 0f;
-            liveBar.maxValue = 1f;
-            RuntimeDropdownUtility.EnsureUsable(liveBar);
+            liveBar.gameObject.SetActive(false);
         }
 
         Text EnsureText(string name, int fontSize, TextAnchor alignment)
@@ -418,36 +427,6 @@ namespace FlightModel
             input.lineType = InputField.LineType.SingleLine;
             RuntimeDropdownUtility.EnsureUsable(input);
             return input;
-        }
-
-        static Text EnsureValueText(Slider slider, string name)
-        {
-            if (slider == null)
-            {
-                return null;
-            }
-
-            Transform existing = slider.transform.Find(name);
-            if (existing != null && existing.TryGetComponent(out Text existingText))
-            {
-                return existingText;
-            }
-
-            GameObject go = new(name, typeof(RectTransform), typeof(Text));
-            RectTransform rect = go.GetComponent<RectTransform>();
-            rect.SetParent(slider.transform, false);
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = new Vector2(0f, 14f);
-            rect.sizeDelta = new Vector2(0f, 16f);
-
-            Text text = go.GetComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 15;
-            text.color = new Color(0.82f, 0.88f, 0.95f);
-            text.alignment = TextAnchor.MiddleLeft;
-            return text;
         }
 
         static Text CreateChildText(RectTransform parent, string name, int fontSize, TextAnchor alignment)
