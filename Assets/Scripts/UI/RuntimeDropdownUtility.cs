@@ -11,6 +11,9 @@ namespace FlightModel
         static readonly Color ControlColor = new(0.12f, 0.16f, 0.21f, 0.98f);
         static readonly Color ControlHoverColor = new(0.18f, 0.24f, 0.32f, 1f);
         static readonly Color ControlPressedColor = new(0.08f, 0.45f, 0.55f, 1f);
+        static readonly Color SliderRailColor = new(0.04f, 0.05f, 0.065f, 1f);
+        static readonly Color SliderFillColor = new(0.12f, 0.7f, 0.82f, 1f);
+        static readonly Color SliderHandleColor = new(0.92f, 0.98f, 1f, 1f);
 
         public static void EnsureUsable(Dropdown dropdown)
         {
@@ -30,10 +33,22 @@ namespace FlightModel
                 dropdown.captionText = CreateText(dropdown.transform as RectTransform, "Caption", TextAnchor.MiddleLeft);
                 Stretch(dropdown.captionText.rectTransform, 8f, 4f, 26f, 4f);
             }
+            else
+            {
+                dropdown.captionText.fontSize = 16;
+                dropdown.captionText.alignment = TextAnchor.MiddleLeft;
+                dropdown.captionText.color = Color.white;
+            }
 
             if (dropdown.template == null || dropdown.itemText == null)
             {
                 BuildTemplate(dropdown);
+            }
+
+            if (dropdown.itemText != null)
+            {
+                dropdown.itemText.fontSize = 16;
+                dropdown.itemText.color = Color.white;
             }
         }
 
@@ -49,6 +64,70 @@ namespace FlightModel
             image.raycastTarget = true;
             button.targetGraphic = image;
             button.colors = CreateControlColors();
+
+            Text label = button.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                label.fontSize = Mathf.Max(label.fontSize, 16);
+                label.color = Color.white;
+            }
+        }
+
+        public static void EnsureUsable(Slider slider)
+        {
+            if (slider == null)
+            {
+                return;
+            }
+
+            slider.colors = CreateControlColors();
+
+            Image background = slider.GetComponent<Image>() ?? slider.gameObject.AddComponent<Image>();
+            background.color = SliderRailColor;
+            background.raycastTarget = true;
+
+            if (slider.fillRect != null)
+            {
+                Image fill = slider.fillRect.GetComponent<Image>() ?? slider.fillRect.gameObject.AddComponent<Image>();
+                fill.color = SliderFillColor;
+                fill.raycastTarget = false;
+            }
+
+            if (slider.handleRect != null)
+            {
+                Image handle = slider.handleRect.GetComponent<Image>() ?? slider.handleRect.gameObject.AddComponent<Image>();
+                handle.color = SliderHandleColor;
+                handle.raycastTarget = true;
+                slider.targetGraphic = handle;
+                slider.handleRect.sizeDelta = new Vector2(22f, 34f);
+            }
+        }
+
+        public static void EnsureUsable(InputField input)
+        {
+            if (input == null)
+            {
+                return;
+            }
+
+            Image image = input.GetComponent<Image>() ?? input.gameObject.AddComponent<Image>();
+            image.color = ControlColor;
+            image.raycastTarget = true;
+            input.targetGraphic = image;
+            input.colors = CreateControlColors();
+
+            if (input.textComponent != null)
+            {
+                input.textComponent.fontSize = 16;
+                input.textComponent.color = Color.white;
+                input.textComponent.alignment = TextAnchor.MiddleCenter;
+            }
+
+            if (input.placeholder is Text placeholder)
+            {
+                placeholder.fontSize = 16;
+                placeholder.color = new Color(0.65f, 0.7f, 0.78f, 0.85f);
+            }
         }
 
         public static void EnsureReadableToggle(Toggle toggle)
@@ -63,6 +142,13 @@ namespace FlightModel
             image.raycastTarget = true;
             toggle.targetGraphic = image;
             toggle.colors = CreateControlColors();
+
+            Text label = toggle.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                label.fontSize = Mathf.Max(label.fontSize, 16);
+                label.color = Color.white;
+            }
         }
 
         static void BuildTemplate(Dropdown dropdown)
@@ -81,7 +167,7 @@ namespace FlightModel
             template.anchorMax = new Vector2(1f, 0f);
             template.pivot = new Vector2(0.5f, 1f);
             template.anchoredPosition = new Vector2(0f, -2f);
-            template.sizeDelta = new Vector2(0f, 220f);
+            template.sizeDelta = new Vector2(0f, 320f);
             templateGo.SetActive(false);
             templateGo.GetComponent<Image>().color = PanelColor;
 
@@ -113,9 +199,9 @@ namespace FlightModel
             GameObject itemGo = new("Item", typeof(RectTransform), typeof(Toggle), typeof(Image), typeof(LayoutElement));
             RectTransform item = itemGo.GetComponent<RectTransform>();
             item.SetParent(content, false);
-            item.sizeDelta = new Vector2(0f, 26f);
+            item.sizeDelta = new Vector2(0f, 40f);
             itemGo.GetComponent<Image>().color = ItemColor;
-            itemGo.GetComponent<LayoutElement>().preferredHeight = 26f;
+            itemGo.GetComponent<LayoutElement>().preferredHeight = 40f;
 
             Toggle toggle = itemGo.GetComponent<Toggle>();
             toggle.targetGraphic = itemGo.GetComponent<Image>();
@@ -155,7 +241,7 @@ namespace FlightModel
             Text text = go.GetComponent<Text>();
             text.text = ">";
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 14;
+            text.fontSize = 18;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = new Color(0.55f, 1f, 0.75f);
             return text;
@@ -169,7 +255,7 @@ namespace FlightModel
 
             Text text = go.GetComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 12;
+            text.fontSize = 16;
             text.alignment = alignment;
             text.color = Color.white;
             return text;

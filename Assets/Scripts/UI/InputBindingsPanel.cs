@@ -5,8 +5,8 @@ namespace FlightModel
 {
     public class InputBindingsPanel : MonoBehaviour
     {
-        const float HeaderHeight = 72f;
-        const float RowHeight = 116f;
+        const float HeaderHeight = 86f;
+        const float RowHeight = 238f;
 
         [SerializeField] GameObject root;
         [SerializeField] AxisBindingRow[] axisRows;
@@ -108,8 +108,8 @@ namespace FlightModel
             contentRect.sizeDelta = new Vector2(0f, 0f);
 
             VerticalLayoutGroup layout = contentGo.GetComponent<VerticalLayoutGroup>();
-            layout.spacing = 10f;
-            layout.padding = new RectOffset(8, 8, 8, 16);
+            layout.spacing = 14f;
+            layout.padding = new RectOffset(12, 12, 12, 20);
             layout.childAlignment = TextAnchor.UpperLeft;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
@@ -164,7 +164,7 @@ namespace FlightModel
             rowRect.anchoredPosition = Vector2.zero;
             rowRect.sizeDelta = new Vector2(0f, RowHeight);
             Image background = row.gameObject.GetComponent<Image>() ?? row.gameObject.AddComponent<Image>();
-            background.color = new Color(0.055f, 0.075f, 0.1f, 0.86f);
+            background.color = new Color(0.055f, 0.075f, 0.1f, 0.92f);
             background.raycastTarget = true;
 
             LayoutElement layoutElement = row.gameObject.GetComponent<LayoutElement>();
@@ -189,7 +189,7 @@ namespace FlightModel
             columnsRect.sizeDelta = Vector2.zero;
 
             HorizontalLayoutGroup columnsLayout = columnsGo.GetComponent<HorizontalLayoutGroup>();
-            columnsLayout.spacing = 12f;
+            columnsLayout.spacing = 18f;
             columnsLayout.childAlignment = TextAnchor.UpperLeft;
             columnsLayout.childControlWidth = true;
             columnsLayout.childControlHeight = true;
@@ -215,7 +215,7 @@ namespace FlightModel
             columnRect.sizeDelta = Vector2.zero;
 
             VerticalLayoutGroup columnLayout = columnGo.GetComponent<VerticalLayoutGroup>();
-            columnLayout.spacing = 10f;
+            columnLayout.spacing = 14f;
             columnLayout.childAlignment = TextAnchor.UpperLeft;
             columnLayout.childControlWidth = true;
             columnLayout.childControlHeight = true;
@@ -239,13 +239,19 @@ namespace FlightModel
                 title.anchorMin = new Vector2(0f, 1f);
                 title.anchorMax = new Vector2(1f, 1f);
                 title.pivot = new Vector2(0.5f, 1f);
-                title.anchoredPosition = new Vector2(0f, -6f);
-                title.sizeDelta = new Vector2(-16f, 28f);
+                title.anchoredPosition = new Vector2(0f, -8f);
+                title.sizeDelta = new Vector2(-16f, 34f);
+
+                Text titleText = title.GetComponent<Text>();
+                if (titleText != null)
+                {
+                    titleText.fontSize = 24;
+                }
             }
 
             LayoutTopButton(panelRect.Find("RefreshButton") as RectTransform, 10f);
-            LayoutTopButton(panelRect.Find("SaveButton") as RectTransform, 180f);
-            LayoutTopToggle(panelRect.Find("AutoSaveToggle") as RectTransform, 360f);
+            LayoutTopButton(panelRect.Find("SaveButton") as RectTransform, 220f);
+            LayoutTopToggle(panelRect.Find("AutoSaveToggle") as RectTransform, 430f);
         }
 
         static void LayoutTopButton(RectTransform rect, float x)
@@ -258,8 +264,14 @@ namespace FlightModel
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(x, -36f);
-            rect.sizeDelta = new Vector2(160f, 34f);
+            rect.anchoredPosition = new Vector2(x, -46f);
+            rect.sizeDelta = new Vector2(190f, 40f);
+
+            Text label = rect.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                label.fontSize = 16;
+            }
         }
 
         static void LayoutTopToggle(RectTransform rect, float x)
@@ -272,8 +284,8 @@ namespace FlightModel
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(x, -38f);
-            rect.sizeDelta = new Vector2(220f, 32f);
+            rect.anchoredPosition = new Vector2(x, -48f);
+            rect.sizeDelta = new Vector2(260f, 38f);
         }
 
         void StyleHeaderControls()

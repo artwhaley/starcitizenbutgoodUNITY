@@ -43,7 +43,7 @@ namespace FlightModel
             IReadOnlyList<InputDevice> devices = provider.GetJoysticks();
             if (devices.Count == 0)
             {
-                var empty = CreateText(rowsParent, "No joysticks detected - connect hardware and press Refresh Devices.", 14);
+                var empty = CreateText(rowsParent, "No joysticks detected - connect hardware and press Refresh Devices.", 18);
                 empty.color = new Color(1f, 0.7f, 0.5f);
                 rows.Add(new DeviceRowUi { header = empty });
                 return;
@@ -99,7 +99,7 @@ namespace FlightModel
         DeviceRowUi CreateDeviceRow(InputDevice device)
         {
             var row = new DeviceRowUi { device = device };
-            row.header = CreateText(rowsParent, provider.GetDeviceLabel(device), 12);
+            row.header = CreateText(rowsParent, provider.GetDeviceLabel(device), 16);
             row.header.fontStyle = FontStyle.Bold;
 
             var axisLine = CreateRowContainer(rowsParent);
@@ -107,8 +107,8 @@ namespace FlightModel
             row.axisTexts = new Text[axisCount];
             for (int i = 0; i < axisCount; i++)
             {
-                CreateText(axisLine, $"A{i}", 10, 24f).color = new Color(0.55f, 0.55f, 0.55f);
-                row.axisTexts[i] = CreateText(axisLine, "0.0", 11, 44f);
+                CreateText(axisLine, $"A{i}", 13, 30f).color = new Color(0.55f, 0.55f, 0.55f);
+                row.axisTexts[i] = CreateText(axisLine, "0.0", 14, 54f);
                 row.axisTexts[i].alignment = TextAnchor.MiddleCenter;
             }
 
@@ -117,8 +117,8 @@ namespace FlightModel
             row.buttonTexts = new Text[buttonCount];
             for (int i = 0; i < buttonCount; i++)
             {
-                CreateText(buttonLine, $"B{i}", 9, 30f).color = new Color(0.55f, 0.55f, 0.55f);
-                row.buttonTexts[i] = CreateText(buttonLine, "--", 10, 30f);
+                CreateText(buttonLine, $"B{i}", 12, 36f).color = new Color(0.55f, 0.55f, 0.55f);
+                row.buttonTexts[i] = CreateText(buttonLine, "--", 13, 36f);
                 row.buttonTexts[i].alignment = TextAnchor.MiddleCenter;
             }
 
@@ -142,21 +142,21 @@ namespace FlightModel
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var group = gameObject.AddComponent<VerticalLayoutGroup>();
-            group.spacing = 4f;
-            group.padding = new RectOffset(4, 4, 4, 8);
+            group.spacing = 8f;
+            group.padding = new RectOffset(8, 8, 8, 12);
             group.childAlignment = TextAnchor.UpperLeft;
             group.childControlWidth = true;
             group.childControlHeight = true;
             group.childForceExpandWidth = true;
             group.childForceExpandHeight = false;
 
-            CreateText(rootRect, "DEVICE PROBE - wriggle sticks/buttons; lit axes/buttons are active", 13);
+            CreateText(rootRect, "DEVICE PROBE - wriggle sticks/buttons; lit axes/buttons are active", 18);
 
             var rowsGo = new GameObject("Rows", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             rowsParent = rowsGo.GetComponent<RectTransform>();
             rowsParent.SetParent(rootRect, false);
             var rowsLayout = rowsGo.GetComponent<VerticalLayoutGroup>();
-            rowsLayout.spacing = 8f;
+            rowsLayout.spacing = 12f;
             rowsLayout.childControlWidth = true;
             rowsLayout.childControlHeight = true;
             rowsLayout.childForceExpandWidth = true;
@@ -169,12 +169,12 @@ namespace FlightModel
             RectTransform rect = go.GetComponent<RectTransform>();
             rect.SetParent(parent, false);
             HorizontalLayoutGroup layout = go.GetComponent<HorizontalLayoutGroup>();
-            layout.spacing = 2f;
+            layout.spacing = 4f;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = false;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
-            go.GetComponent<LayoutElement>().minHeight = 16f;
+            go.GetComponent<LayoutElement>().minHeight = 24f;
             return rect;
         }
 

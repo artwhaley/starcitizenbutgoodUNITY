@@ -59,6 +59,7 @@ namespace FlightModel
             if (liveText != null)
             {
                 liveText.text = pressed ? "PRESSED" : "---";
+                liveText.color = pressed ? new Color(1f, 0.85f, 0.35f) : new Color(0.75f, 0.8f, 0.88f);
             }
         }
 
@@ -139,14 +140,21 @@ namespace FlightModel
 
         void LayoutRowControls()
         {
-            SetStretchTop(deviceDropdown != null ? deviceDropdown.transform as RectTransform : null, 118f, 8f, 12f, 30f);
-            SetStretchTop(buttonDropdown != null ? buttonDropdown.transform as RectTransform : null, 118f, 46f, 12f, 30f);
-            SetStretchTop(liveText != null ? liveText.rectTransform : null, 10f, 82f, 12f, 24f);
+            SetStretchTop(deviceDropdown != null ? deviceDropdown.transform as RectTransform : null, 12f, 48f, 12f, 42f);
+            SetStretchTop(buttonDropdown != null ? buttonDropdown.transform as RectTransform : null, 12f, 96f, 12f, 42f);
+            SetStretchTop(liveText != null ? liveText.rectTransform : null, 12f, 150f, 12f, 34f);
 
             Text label = EnsureLabel();
             label.text = "Fire Primary";
             label.fontStyle = FontStyle.Bold;
-            SetStretchTop(label.rectTransform, 10f, 8f, 390f, 28f);
+            label.fontSize = 18;
+            SetStretchTop(label.rectTransform, 12f, 10f, 12f, 28f);
+
+            if (liveText != null)
+            {
+                liveText.fontSize = 18;
+                liveText.alignment = TextAnchor.MiddleCenter;
+            }
         }
 
         Text EnsureLabel()
@@ -163,7 +171,7 @@ namespace FlightModel
 
             Text text = go.GetComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 12;
+            text.fontSize = 18;
             text.color = Color.white;
             text.alignment = TextAnchor.MiddleLeft;
             return text;
