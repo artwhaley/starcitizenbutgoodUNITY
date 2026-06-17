@@ -49,7 +49,7 @@ Short term:
 
 - Keep U-wing as the only active ship profile.
 - Expand the tuning overlay so it exposes every field in `ShipTuning`, with labels and numeric entry.
-- Save U-wing tuning overrides under a U-wing-specific key or filename.
+- Save U-wing tuning overrides under a ship-specific filename (`ship_tuning_<profile>.json` in persistent data).
 
 Medium term:
 

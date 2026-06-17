@@ -40,6 +40,10 @@ Keyboard bindings live in `Assets/Settings/InputProfiles/FlightInputActions.inpu
 
 `PF_PlayerShip` references that asset on `ShipInputReader`.
 
+## Manual playtest
+
+See [Docs/flight_playtest.md](Docs/flight_playtest.md) for the U-wing solver/VFX verification checklist.
+
 ## U-wing art (later)
 
 Import FBX to `Assets/Art/Ships/UWing/Source/`, replace cube under player ship, run **FlightModel -> Auto-Wire Ship References**.
