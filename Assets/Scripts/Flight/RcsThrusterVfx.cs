@@ -1,10 +1,12 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace FlightModel
 {
     public class RcsThrusterVfx : MonoBehaviour
     {
+        static readonly Color NormalRcsColor = new(0.55f, 0.78f, 1f, 0.9f);
+        static readonly Color BoostRcsColor = new(1f, 0.86f, 0.25f, 0.95f);
+
         [SerializeField] ShipVisualReferences visuals;
         [SerializeField] ShipInputReader input;
         [SerializeField] ShipFlightController flight;
@@ -17,7 +19,7 @@ namespace FlightModel
         [SerializeField] float minBurstMultiplier = 0.45f;
         [SerializeField] float maxBurstMultiplier = 1.9f;
 
-        readonly Dictionary<Transform, ParticleSystem> nodePuffs = new();
+        readonly System.Collections.Generic.Dictionary<Transform, ParticleSystem> nodePuffs = new();
         float timer;
         bool puffsBuilt;
 
@@ -116,7 +118,7 @@ namespace FlightModel
                 return;
             }
 
-            ShipInputCommand command = flight != null ? flight.LastAppliedThrusterCommand : input != null ? input.LastCommand : default;
+            ShipInputCommand command = ResolveAppliedCommand();
             float activity = Mathf.Max(
                 Mathf.Abs(command.thrustForward),
                 Mathf.Abs(command.thrustRight),
@@ -137,6 +139,8 @@ namespace FlightModel
             }
 
             timer = emitInterval;
+            Color rcsColor = command.boost ? BoostRcsColor : NormalRcsColor;
+
             foreach (Transform node in visuals.RcsNodes)
             {
                 if (node == null || !nodePuffs.TryGetValue(node, out ParticleSystem particleSystem))
@@ -152,6 +156,7 @@ namespace FlightModel
 
                 var main = particleSystem.main;
                 main.startSpeedMultiplier = Mathf.Lerp(minSpeedMultiplier, maxSpeedMultiplier, strength);
+                main.startColor = rcsColor;
 
                 float burstMultiplier = Mathf.Lerp(minBurstMultiplier, maxBurstMultiplier, strength);
                 int puffCount = Mathf.Max(1, Mathf.CeilToInt(puffCountPerEmit * burstMultiplier));
@@ -162,6 +167,16 @@ namespace FlightModel
 
                 particleSystem.Emit(puffCount);
             }
+        }
+
+        ShipInputCommand ResolveAppliedCommand()
+        {
+            if (flight != null)
+            {
+                return flight.LastThrusterOutput.ToMatcherCommand();
+            }
+
+            return input != null ? input.LastCommand : default;
         }
     }
 }

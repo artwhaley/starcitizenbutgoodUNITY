@@ -115,6 +115,11 @@ namespace FlightModel
             AddStrength(ref strength, command.roll, RollPositive, canonical);
             AddStrength(ref strength, -command.roll, RollNegative, canonical);
 
+            if (command.boost && command.thrustForward > InputThreshold)
+            {
+                AddStrength(ref strength, command.thrustForward, ThrustBackward, canonical);
+            }
+
             if (command.brake)
             {
                 strength = Mathf.Max(strength, Random.value < 0.08f ? 0.6f : 0f);

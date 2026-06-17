@@ -6,6 +6,7 @@ namespace FlightModel
     {
         [SerializeField] ShipVisualReferences visuals;
         [SerializeField] ShipInputReader input;
+        [SerializeField] ShipFlightController flight;
         [SerializeField] GameObject plumePrefab;
         [SerializeField] float inputThreshold = 0.05f;
         [SerializeField] float plumeEmissionRate = 82f;
@@ -16,9 +17,13 @@ namespace FlightModel
         ParticleSystem[] plumes;
 
         public void Configure(ShipVisualReferences shipVisuals, ShipInputReader shipInput, GameObject plume = null)
+            => Configure(shipVisuals, shipInput, null, plume);
+
+        public void Configure(ShipVisualReferences shipVisuals, ShipInputReader shipInput, ShipFlightController shipFlight, GameObject plume = null)
         {
             visuals = shipVisuals;
             input = shipInput;
+            flight = shipFlight;
             if (plume != null)
             {
                 plumePrefab = plume;
@@ -95,17 +100,21 @@ namespace FlightModel
 
         void Update()
         {
-            if (input == null || plumes == null || visuals == null)
+            if (plumes == null || visuals == null)
             {
                 return;
             }
 
-            ShipInputCommand command = input.LastCommand;
-            float forward = Mathf.Max(0f, command.thrustForward);
-            bool enginesActive = forward > inputThreshold;
-            float emissionScale = forward;
+            ShipThrusterOutput thrusters = flight != null
+                ? flight.LastThrusterOutput
+                : default;
 
-            if (command.boost && forward > inputThreshold)
+            float mainEngine = flight != null ? thrusters.mainEngineForward : ResolveLegacyMainEngine();
+            bool enginesActive = mainEngine > inputThreshold;
+            float emissionScale = mainEngine;
+            bool boost = flight != null ? thrusters.boostActive : input != null && input.LastCommand.boost;
+
+            if (boost && enginesActive)
             {
                 emissionScale *= boostEmissionMultiplier;
             }
@@ -124,12 +133,12 @@ namespace FlightModel
                 emission.rateOverTime = targetRate;
 
                 var main = plume.main;
-                float heat = command.boost ? 1f : Mathf.Clamp01(forward);
+                float heat = boost ? 1f : Mathf.Clamp01(mainEngine);
                 Color hotColor = Color.Lerp(plumeColor, new Color(1f, 0.72f, 0.28f, 1f), heat * 0.35f);
                 main.startColor = hotColor;
 
                 var sizeOverLifetime = plume.sizeOverLifetime;
-                sizeOverLifetime.sizeMultiplier = Mathf.Lerp(0.75f, command.boost ? 1.55f : 1.2f, Mathf.Clamp01(forward));
+                sizeOverLifetime.sizeMultiplier = Mathf.Lerp(0.75f, boost ? 1.55f : 1.2f, Mathf.Clamp01(mainEngine));
 
                 if (enginesActive && !plume.isPlaying)
                 {
@@ -140,6 +149,17 @@ namespace FlightModel
                     plume.Stop(true, ParticleSystemStopBehavior.StopEmitting);
                 }
             }
+        }
+
+        float ResolveLegacyMainEngine()
+        {
+            if (input == null)
+            {
+                return 0f;
+            }
+
+            ShipInputCommand command = input.LastCommand;
+            return command.fineControl ? 0f : Mathf.Max(0f, command.thrustForward);
         }
     }
 }

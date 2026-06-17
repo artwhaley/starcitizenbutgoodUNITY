@@ -206,7 +206,7 @@ namespace FlightModel
                 }
             }
 
-            engineGlowVfx.Configure(visuals, input, enginePlumePrefab);
+            engineGlowVfx.Configure(visuals, input, flight, enginePlumePrefab);
         }
 
         static void DisablePlayerShipMotionVectors(Transform visualRoot)
