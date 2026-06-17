@@ -117,22 +117,36 @@ namespace FlightModel
 
     public static class ShipTuningJsonStore
     {
-        static string FilePath => Path.Combine(Application.persistentDataPath, "ship_tuning_override.json");
+        public static string GetProfileKey(ShipTuning tuning)
+            => tuning != null ? tuning.name : "UnknownShip";
 
-        public static void Save(ShipTuning tuning)
+        static string FilePathFor(string profileKey)
         {
-            string json = JsonUtility.ToJson(ShipTuningDto.From(tuning), true);
-            File.WriteAllText(FilePath, json);
+            string safeKey = string.IsNullOrWhiteSpace(profileKey) ? "UnknownShip" : profileKey;
+            foreach (char invalid in Path.GetInvalidFileNameChars())
+            {
+                safeKey = safeKey.Replace(invalid, '_');
+            }
+
+            return Path.Combine(Application.persistentDataPath, $"ship_tuning_{safeKey}.json");
         }
 
-        public static bool TryLoad(ShipTuning tuning)
+        public static void Save(ShipTuning tuning, string profileKey = null)
         {
-            if (!File.Exists(FilePath))
+            string key = profileKey ?? GetProfileKey(tuning);
+            string json = JsonUtility.ToJson(ShipTuningDto.From(tuning), true);
+            File.WriteAllText(FilePathFor(key), json);
+        }
+
+        public static bool TryLoad(ShipTuning tuning, string profileKey = null)
+        {
+            string path = FilePathFor(profileKey ?? GetProfileKey(tuning));
+            if (!File.Exists(path))
             {
                 return false;
             }
 
-            ShipTuningDto dto = JsonUtility.FromJson<ShipTuningDto>(File.ReadAllText(FilePath));
+            ShipTuningDto dto = JsonUtility.FromJson<ShipTuningDto>(File.ReadAllText(path));
             dto?.ApplyTo(tuning);
             return dto != null;
         }
