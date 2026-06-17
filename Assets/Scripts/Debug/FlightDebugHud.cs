@@ -61,7 +61,10 @@ namespace FlightModel
             }
 
             float speed = state.linearVelocity.magnitude;
-            string assist = state.assistMode.ToString();
+            Vector3 requestedLinear = state.appliedOutput.requestedLocalLinear;
+            Vector3 appliedLinear = state.appliedOutput.appliedLocalLinear;
+            Vector3 requestedAngular = state.appliedOutput.requestedLocalAngular;
+            Vector3 appliedAngular = state.appliedOutput.appliedLocalAngular;
 
             leftText.text =
                 "--- FLIGHT ---\n" +
@@ -69,18 +72,25 @@ namespace FlightModel
                 (viewModel.viewMode == "EXTERNAL"
                     ? $"EXT CAM Pan/Tilt/Dist: {viewModel.externalPanDegrees:0} / {viewModel.externalTiltDegrees:0} / {viewModel.externalDistance:0}\n"
                     : string.Empty) +
-                $"ASSIST (F): {assist}\n" +
+                $"ASSIST (F): {state.assistMode}\n" +
+                $"BOOST: {(state.boostActive ? "ON" : "OFF")}\n" +
+                $"FINE (G): {(state.fineControlActive ? "ON" : "OFF")}\n" +
                 $"SPEED: {speed:0.0} m/s\n" +
-                $"VEL: {state.linearVelocity.x:0} {state.linearVelocity.y:0} {state.linearVelocity.z:0}\n" +
-                $"FRAME: {state.frameId}\n" +
+                $"MASS: {state.currentMassKg:0} kg\n" +
+                $"FUEL: {state.remainingFuelKg:0.0} kg\n" +
+                $"HYPR: {state.remainingHypergolicKg:0.0} kg\n" +
+                $"CAP BLOCK: {(state.appliedOutput.linearSpeedCapped ? "LINEAR" : "none")}\n" +
+                $"RES BLOCK: {(state.appliedOutput.mainEngineFuelBlocked ? "FUEL " : string.Empty)}{(state.appliedOutput.hypergolicBlocked ? "HYPR" : string.Empty)}\n" +
                 $"BRAKE: {(input.brake ? "ON" : "OFF")}";
 
             rightText.text =
-                "--- INPUT ---\n" +
-                $"THR F/R/U: {input.thrustForward:+0.00;-0.00;+0.00} {input.thrustRight:+0.00;-0.00;+0.00} {input.thrustUp:+0.00;-0.00;+0.00}\n" +
-                $"P/Y/R: {input.pitch:+0.00;-0.00;+0.00} {input.yaw:+0.00;-0.00;+0.00} {input.roll:+0.00;-0.00;+0.00}\n" +
+                "--- THRUST ---\n" +
+                $"REQ LIN: {requestedLinear.x:+0.00;-0.00;+0.00} {requestedLinear.y:+0.00;-0.00;+0.00} {requestedLinear.z:+0.00;-0.00;+0.00}\n" +
+                $"APL LIN: {appliedLinear.x:+0.0;-0.0;+0.0} {appliedLinear.y:+0.0;-0.0;+0.0} {appliedLinear.z:+0.0;-0.0;+0.0}\n" +
+                $"REQ ANG: {requestedAngular.x:+0.00;-0.00;+0.00} {requestedAngular.y:+0.00;-0.00;+0.00} {requestedAngular.z:+0.00;-0.00;+0.00}\n" +
+                $"APL ANG: {appliedAngular.x:+0.0;-0.0;+0.0} {appliedAngular.y:+0.0;-0.0;+0.0} {appliedAngular.z:+0.0;-0.0;+0.0}\n" +
+                $"MAIN/MNV: {state.appliedOutput.thrusters.mainEngineForward:0.00} / {state.appliedOutput.thrusters.maneuverForward:0.00}\n" +
                 $"ANG P/Y/R: {state.angularVelocityRadians.x:+0.000;-0.000;+0.000} {state.angularVelocityRadians.y:+0.000;-0.000;+0.000} {state.angularVelocityRadians.z:+0.000;-0.000;+0.000}\n" +
-                $"BOOST: {(input.boost ? "ON" : "OFF")}\n" +
                 $"FIRE: {(input.firePrimary ? "ON" : "OFF")}\n" +
                 $"FOV: {viewModel.cockpitFov:0}";
         }

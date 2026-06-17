@@ -8,6 +8,10 @@ namespace FlightModel
         public Vector3 appliedLocalLinear;
         public Vector3 requestedLocalAngular;
         public Vector3 appliedLocalAngular;
+        public ShipThrusterOutput thrusters;
+        public bool mainEngineFuelBlocked;
+        public bool hypergolicBlocked;
+        public bool linearSpeedCapped;
     }
 
     public struct ShipState
