@@ -12,12 +12,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd2617b3cb5af0e4083881fcef0b715e, type: 3}
   m_Name: DefaultShipTuning
   m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipTuning
-  massKg: 10000
-  maxThrustNewtons: {x: 3500000, y: 3500000, z: 6000000}
-  maxTorque: {x: 45000, y: 45000, z: 45000}
-  boostMultiplier: 1.75
-  angularDampingStrength: 2
-  brakeLinearDampingStrength: 4
-  brakeAngularDampingStrength: 8
-  coupledLateralDampingStrength: 1.5
-  frameLockLinearDampingStrength: 1.5
+  dryMassKg: 10000
+  mainEngineForwardAccel: 600
+  maneuverForwardAccel: 600
+  reverseAccel: 600
+  rightAccel: 350
+  leftAccel: 350
+  upAccel: 350
+  downAccel: 350
+  pitchPositiveAccel: 4.5
+  pitchNegativeAccel: 4.5
+  yawPositiveAccel: 4.5
+  yawNegativeAccel: 4.5
+  rollPositiveAccel: 4.5
+  rollNegativeAccel: 4.5
+  maxLinearSpeedMps: 800
+  boostMaxLinearSpeedMps: 1400
+  boostAccelMultiplier: 1.75
+  maxPitchSpeedRad: 2
+  maxYawSpeedRad: 2
+  maxRollSpeedRad: 3
+  boostAngularSpeedMultiplier: 1.75
+  fineControlLinearAccelMultiplier: 0.25
+  fineControlMaxLinearSpeedMps: 50
+  fineControlAngularAccelMultiplier: 0.25
+  fuelCapacityKg: 5000
+  hypergolicCapacityKg: 500
+  fuelBurnRatePerNewtonSecond: 0.000001
+  hypergolicBurnRatePerNewtonSecond: 0.000002
+  attitudeAssistResponsiveness: 2
+  coupledAssistResponsiveness: 1.5
+  frameLockAssistResponsiveness: 1.5
+  brakeResponsiveness: 4

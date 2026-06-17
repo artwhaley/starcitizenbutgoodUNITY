@@ -12,12 +12,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd2617b3cb5af0e4083881fcef0b715e, type: 3}
   m_Name: Profile_Arcade
   m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipTuning
-  massKg: 8000
-  maxThrustNewtons: {x: 3500000, y: 3500000, z: 8000000}
-  maxTorque: {x: 45000, y: 45000, z: 45000}
-  boostMultiplier: 2
-  angularDampingStrength: 3
-  brakeLinearDampingStrength: 4
-  brakeAngularDampingStrength: 8
-  coupledLateralDampingStrength: 1.5
-  frameLockLinearDampingStrength: 1.5
+  dryMassKg: 8000
+  mainEngineForwardAccel: 1000
+  maneuverForwardAccel: 1000
+  reverseAccel: 1000
+  rightAccel: 437.5
+  leftAccel: 437.5
+  upAccel: 437.5
+  downAccel: 437.5
+  pitchPositiveAccel: 5.625
+  pitchNegativeAccel: 5.625
+  yawPositiveAccel: 5.625
+  yawNegativeAccel: 5.625
+  rollPositiveAccel: 5.625
+  rollNegativeAccel: 5.625
+  maxLinearSpeedMps: 900
+  boostMaxLinearSpeedMps: 1800
+  boostAccelMultiplier: 2
+  maxPitchSpeedRad: 2.5
+  maxYawSpeedRad: 2.5
+  maxRollSpeedRad: 3.5
+  boostAngularSpeedMultiplier: 2
+  fineControlLinearAccelMultiplier: 0.25
+  fineControlMaxLinearSpeedMps: 50
+  fineControlAngularAccelMultiplier: 0.25
+  fuelCapacityKg: 5000
+  hypergolicCapacityKg: 500
+  fuelBurnRatePerNewtonSecond: 0.000001
+  hypergolicBurnRatePerNewtonSecond: 0.000002
+  attitudeAssistResponsiveness: 3
+  coupledAssistResponsiveness: 1.5
+  frameLockAssistResponsiveness: 1.5
+  brakeResponsiveness: 4

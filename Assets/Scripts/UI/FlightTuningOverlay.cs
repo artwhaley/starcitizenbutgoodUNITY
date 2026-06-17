@@ -93,10 +93,10 @@ namespace FlightModel
 
         void SyncSlidersFromRuntime()
         {
-            massSlider.value = runtimeCopy.massKg;
-            boostSlider.value = runtimeCopy.boostMultiplier;
-            forwardThrustSlider.value = runtimeCopy.maxThrustNewtons.z;
-            torqueSlider.value = runtimeCopy.maxTorque.x;
+            massSlider.value = runtimeCopy.dryMassKg;
+            boostSlider.value = runtimeCopy.boostAccelMultiplier;
+            forwardThrustSlider.value = runtimeCopy.mainEngineForwardAccel * runtimeCopy.dryMassKg;
+            torqueSlider.value = runtimeCopy.pitchPositiveAccel * runtimeCopy.dryMassKg;
             if (profileLabel != null)
             {
                 profileLabel.text = sourceAsset != null ? sourceAsset.name : "Runtime";
@@ -105,10 +105,16 @@ namespace FlightModel
 
         void ApplyFromSliders()
         {
-            runtimeCopy.massKg = massSlider.value;
-            runtimeCopy.boostMultiplier = boostSlider.value;
-            runtimeCopy.maxThrustNewtons.z = forwardThrustSlider.value;
-            runtimeCopy.maxTorque = new Vector3(torqueSlider.value, torqueSlider.value, torqueSlider.value);
+            runtimeCopy.dryMassKg = massSlider.value;
+            runtimeCopy.boostAccelMultiplier = boostSlider.value;
+            runtimeCopy.mainEngineForwardAccel = forwardThrustSlider.value / Mathf.Max(1f, runtimeCopy.dryMassKg);
+            float pitchTorqueEquivalent = torqueSlider.value / Mathf.Max(1f, runtimeCopy.dryMassKg);
+            runtimeCopy.pitchPositiveAccel = pitchTorqueEquivalent;
+            runtimeCopy.pitchNegativeAccel = pitchTorqueEquivalent;
+            runtimeCopy.yawPositiveAccel = pitchTorqueEquivalent;
+            runtimeCopy.yawNegativeAccel = pitchTorqueEquivalent;
+            runtimeCopy.rollPositiveAccel = pitchTorqueEquivalent;
+            runtimeCopy.rollNegativeAccel = pitchTorqueEquivalent;
             flight.Tuning = runtimeCopy;
         }
 
@@ -144,15 +150,7 @@ namespace FlightModel
 
         static void CopyTuning(ShipTuning from, ShipTuning to)
         {
-            to.massKg = from.massKg;
-            to.maxThrustNewtons = from.maxThrustNewtons;
-            to.maxTorque = from.maxTorque;
-            to.boostMultiplier = from.boostMultiplier;
-            to.angularDampingStrength = from.angularDampingStrength;
-            to.brakeLinearDampingStrength = from.brakeLinearDampingStrength;
-            to.brakeAngularDampingStrength = from.brakeAngularDampingStrength;
-            to.coupledLateralDampingStrength = from.coupledLateralDampingStrength;
-            to.frameLockLinearDampingStrength = from.frameLockLinearDampingStrength;
+            to.CopyFrom(from);
         }
     }
 }

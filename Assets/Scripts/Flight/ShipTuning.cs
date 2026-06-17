@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FlightModel
 {
@@ -6,28 +7,133 @@ namespace FlightModel
     public class ShipTuning : ScriptableObject
     {
         [Header("Mass")]
-        public float massKg = 10000f;
+        [FormerlySerializedAs("massKg")]
+        public float dryMassKg = 10000f;
 
-        [Header("Thrust (right, up, forward)")]
-        public Vector3 maxThrustNewtons = new(3500000f, 3500000f, 6000000f);
+        [Header("Linear Acceleration (m/s² at dry mass)")]
+        public float mainEngineForwardAccel = 600f;
+        public float maneuverForwardAccel = 600f;
+        public float reverseAccel = 600f;
+        public float rightAccel = 350f;
+        public float leftAccel = 350f;
+        public float upAccel = 350f;
+        public float downAccel = 350f;
 
-        [Header("Torque (pitch, yaw, roll)")]
-        public Vector3 maxTorque = new(45000f, 45000f, 45000f);
+        [Header("Angular Acceleration (rad/s² at dry mass)")]
+        public float pitchPositiveAccel = 4.5f;
+        public float pitchNegativeAccel = 4.5f;
+        public float yawPositiveAccel = 4.5f;
+        public float yawNegativeAccel = 4.5f;
+        public float rollPositiveAccel = 4.5f;
+        public float rollNegativeAccel = 4.5f;
 
-        [Header("Boost")]
-        public float boostMultiplier = 1.75f;
+        [Header("Linear Speed Limits (m/s)")]
+        public float maxLinearSpeedMps = 800f;
+        public float boostMaxLinearSpeedMps = 1400f;
+        public float boostAccelMultiplier = 1.75f;
 
-        [Header("Damping - Angular Assist")]
-        public float angularDampingStrength = 2f;
+        [Header("Angular Speed Limits (rad/s)")]
+        public float maxPitchSpeedRad = 2f;
+        public float maxYawSpeedRad = 2f;
+        public float maxRollSpeedRad = 3f;
+        public float boostAngularSpeedMultiplier = 1.75f;
 
-        [Header("Damping - Brake")]
-        public float brakeLinearDampingStrength = 6f;
-        public float brakeAngularDampingStrength = 12f;
+        [Header("Fine Control Limits")]
+        [Range(0.05f, 1f)]
+        public float fineControlLinearAccelMultiplier = 0.25f;
+        public float fineControlMaxLinearSpeedMps = 50f;
+        [Range(0.05f, 1f)]
+        public float fineControlAngularAccelMultiplier = 0.25f;
 
-        [Header("Damping - Coupled")]
-        public float coupledLateralDampingStrength = 1.5f;
+        [Header("Propellant")]
+        public float fuelCapacityKg = 5000f;
+        public float hypergolicCapacityKg = 500f;
+        public float fuelBurnRatePerNewtonSecond = 1e-6f;
+        public float hypergolicBurnRatePerNewtonSecond = 2e-6f;
 
-        [Header("Damping - Frame Lock")]
-        public float frameLockLinearDampingStrength = 1.5f;
+        [Header("Assist Responsiveness")]
+        public float attitudeAssistResponsiveness = 2f;
+        public float coupledAssistResponsiveness = 1.5f;
+        public float frameLockAssistResponsiveness = 1.5f;
+        public float brakeResponsiveness = 4f;
+
+        public void CopyFrom(ShipTuning other)
+        {
+            if (other == null)
+            {
+                return;
+            }
+
+            dryMassKg = other.dryMassKg;
+            mainEngineForwardAccel = other.mainEngineForwardAccel;
+            maneuverForwardAccel = other.maneuverForwardAccel;
+            reverseAccel = other.reverseAccel;
+            rightAccel = other.rightAccel;
+            leftAccel = other.leftAccel;
+            upAccel = other.upAccel;
+            downAccel = other.downAccel;
+            pitchPositiveAccel = other.pitchPositiveAccel;
+            pitchNegativeAccel = other.pitchNegativeAccel;
+            yawPositiveAccel = other.yawPositiveAccel;
+            yawNegativeAccel = other.yawNegativeAccel;
+            rollPositiveAccel = other.rollPositiveAccel;
+            rollNegativeAccel = other.rollNegativeAccel;
+            maxLinearSpeedMps = other.maxLinearSpeedMps;
+            boostMaxLinearSpeedMps = other.boostMaxLinearSpeedMps;
+            boostAccelMultiplier = other.boostAccelMultiplier;
+            maxPitchSpeedRad = other.maxPitchSpeedRad;
+            maxYawSpeedRad = other.maxYawSpeedRad;
+            maxRollSpeedRad = other.maxRollSpeedRad;
+            boostAngularSpeedMultiplier = other.boostAngularSpeedMultiplier;
+            fineControlLinearAccelMultiplier = other.fineControlLinearAccelMultiplier;
+            fineControlMaxLinearSpeedMps = other.fineControlMaxLinearSpeedMps;
+            fineControlAngularAccelMultiplier = other.fineControlAngularAccelMultiplier;
+            fuelCapacityKg = other.fuelCapacityKg;
+            hypergolicCapacityKg = other.hypergolicCapacityKg;
+            fuelBurnRatePerNewtonSecond = other.fuelBurnRatePerNewtonSecond;
+            hypergolicBurnRatePerNewtonSecond = other.hypergolicBurnRatePerNewtonSecond;
+            attitudeAssistResponsiveness = other.attitudeAssistResponsiveness;
+            coupledAssistResponsiveness = other.coupledAssistResponsiveness;
+            frameLockAssistResponsiveness = other.frameLockAssistResponsiveness;
+            brakeResponsiveness = other.brakeResponsiveness;
+        }
+
+        /// <summary>
+        /// Temporary bridge for the legacy damping solver. Removed when T03 lands.
+        /// </summary>
+        internal LegacySolverLimits GetLegacySolverLimits()
+        {
+            float mass = Mathf.Max(1f, dryMassKg);
+            float lateralAccel = Mathf.Max(rightAccel, leftAccel, upAccel, downAccel);
+            float pitchAccel = Mathf.Max(pitchPositiveAccel, pitchNegativeAccel);
+            float yawAccel = Mathf.Max(yawPositiveAccel, yawNegativeAccel);
+            float rollAccel = Mathf.Max(rollPositiveAccel, rollNegativeAccel);
+
+            return new LegacySolverLimits
+            {
+                massKg = mass,
+                maxThrustNewtons = new Vector3(lateralAccel * mass, lateralAccel * mass, mainEngineForwardAccel * mass),
+                maxTorque = new Vector3(pitchAccel * mass, yawAccel * mass, rollAccel * mass),
+                boostMultiplier = boostAccelMultiplier,
+                angularDampingStrength = attitudeAssistResponsiveness,
+                brakeLinearDampingStrength = brakeResponsiveness,
+                brakeAngularDampingStrength = brakeResponsiveness * 2f,
+                coupledLateralDampingStrength = coupledAssistResponsiveness,
+                frameLockLinearDampingStrength = frameLockAssistResponsiveness
+            };
+        }
+
+        internal struct LegacySolverLimits
+        {
+            public float massKg;
+            public Vector3 maxThrustNewtons;
+            public Vector3 maxTorque;
+            public float boostMultiplier;
+            public float angularDampingStrength;
+            public float brakeLinearDampingStrength;
+            public float brakeAngularDampingStrength;
+            public float coupledLateralDampingStrength;
+            public float frameLockLinearDampingStrength;
+        }
     }
 }

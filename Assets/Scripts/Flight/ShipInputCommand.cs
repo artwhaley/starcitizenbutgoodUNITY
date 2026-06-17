@@ -9,6 +9,7 @@ namespace FlightModel
         public float yaw;
         public float roll;
         public bool boost;
+        public bool fineControl;
         public bool brake;
         public bool firePrimary;
     }

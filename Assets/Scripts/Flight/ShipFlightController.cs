@@ -27,7 +27,13 @@ namespace FlightModel
                 linearVelocity = Vector3.zero,
                 angularVelocityRadians = Vector3.zero,
                 assistMode = FlightAssistMode.AssistOff,
-                frameId = "LocalTestFrame"
+                frameId = "LocalTestFrame",
+                boostActive = false,
+                fineControlActive = false,
+                currentMassKg = tuning != null ? tuning.dryMassKg : 0f,
+                remainingFuelKg = tuning != null ? tuning.fuelCapacityKg : 0f,
+                remainingHypergolicKg = tuning != null ? tuning.hypergolicCapacityKg : 0f,
+                appliedOutput = default
             };
         }
 
@@ -61,20 +67,24 @@ namespace FlightModel
                 brake = input.brake
             };
 
-            float boostScale = input.boost ? tuning.boostMultiplier : 1f;
+            ShipTuning.LegacySolverLimits legacy = tuning.GetLegacySolverLimits();
+            state.boostActive = input.boost;
+            state.fineControlActive = input.fineControl;
+
+            float boostScale = input.boost ? legacy.boostMultiplier : 1f;
             Vector3 localForce = new(
-                thrustRight * tuning.maxThrustNewtons.x,
-                thrustUp * tuning.maxThrustNewtons.y,
-                thrustForward * tuning.maxThrustNewtons.z * boostScale);
+                thrustRight * legacy.maxThrustNewtons.x,
+                thrustUp * legacy.maxThrustNewtons.y,
+                thrustForward * legacy.maxThrustNewtons.z * boostScale);
 
             Vector3 worldForce = state.rotation * localForce;
-            Vector3 acceleration = worldForce / Mathf.Max(1f, tuning.massKg);
+            Vector3 acceleration = worldForce / legacy.massKg;
             state.linearVelocity += acceleration * deltaSeconds;
 
             if (input.brake)
             {
                 Vector3 beforeBrakeVelocity = state.linearVelocity;
-                state.linearVelocity = ExponentialDamp(state.linearVelocity, tuning.brakeLinearDampingStrength, deltaSeconds);
+                state.linearVelocity = ExponentialDamp(state.linearVelocity, legacy.brakeLinearDampingStrength, deltaSeconds);
                 AddLinearAssistCommand(beforeBrakeVelocity, state.linearVelocity, deltaSeconds);
             }
             else
@@ -93,11 +103,11 @@ namespace FlightModel
             state.position += state.linearVelocity * deltaSeconds;
 
             Vector3 localTorque = new(
-                pitch * tuning.maxTorque.x,
-                yaw * tuning.maxTorque.y,
-                roll * tuning.maxTorque.z);
+                pitch * legacy.maxTorque.x,
+                yaw * legacy.maxTorque.y,
+                roll * legacy.maxTorque.z);
 
-            Vector3 angularAcceleration = localTorque / Mathf.Max(1f, tuning.massKg);
+            Vector3 angularAcceleration = localTorque / legacy.massKg;
             state.angularVelocityRadians += angularAcceleration * deltaSeconds;
 
             if (input.brake)
@@ -105,7 +115,7 @@ namespace FlightModel
                 Vector3 beforeBrakeAngularVelocity = state.angularVelocityRadians;
                 state.angularVelocityRadians = ExponentialDamp(
                     state.angularVelocityRadians,
-                    tuning.brakeAngularDampingStrength,
+                    legacy.brakeAngularDampingStrength,
                     deltaSeconds);
                 AddAngularAssistCommand(beforeBrakeAngularVelocity, state.angularVelocityRadians, deltaSeconds);
             }
@@ -129,21 +139,22 @@ namespace FlightModel
 
         void ApplyAttitudeAssist(float deltaSeconds, float pitch, float yaw, float roll)
         {
+            float assistStrength = tuning.GetLegacySolverLimits().angularDampingStrength;
             Vector3 before = state.angularVelocityRadians;
 
             if (IsBelowThreshold(roll))
             {
-                state.angularVelocityRadians.z = Mathf.Lerp(state.angularVelocityRadians.z, 0f, tuning.angularDampingStrength * deltaSeconds);
+                state.angularVelocityRadians.z = Mathf.Lerp(state.angularVelocityRadians.z, 0f, assistStrength * deltaSeconds);
             }
 
             if (IsBelowThreshold(pitch))
             {
-                state.angularVelocityRadians.x = Mathf.Lerp(state.angularVelocityRadians.x, 0f, tuning.angularDampingStrength * deltaSeconds);
+                state.angularVelocityRadians.x = Mathf.Lerp(state.angularVelocityRadians.x, 0f, assistStrength * deltaSeconds);
             }
 
             if (IsBelowThreshold(yaw))
             {
-                state.angularVelocityRadians.y = Mathf.Lerp(state.angularVelocityRadians.y, 0f, tuning.angularDampingStrength * deltaSeconds);
+                state.angularVelocityRadians.y = Mathf.Lerp(state.angularVelocityRadians.y, 0f, assistStrength * deltaSeconds);
             }
 
             AddAngularAssistCommand(before, state.angularVelocityRadians, deltaSeconds);
@@ -151,17 +162,18 @@ namespace FlightModel
 
         void ApplyCoupledLinearAssist(float deltaSeconds, float thrustRight, float thrustUp)
         {
+            float assistStrength = tuning.GetLegacySolverLimits().coupledLateralDampingStrength;
             Vector3 localVelocity = Quaternion.Inverse(state.rotation) * state.linearVelocity;
             Vector3 before = localVelocity;
 
             if (IsBelowThreshold(thrustRight))
             {
-                localVelocity.x = Mathf.Lerp(localVelocity.x, 0f, tuning.coupledLateralDampingStrength * deltaSeconds);
+                localVelocity.x = Mathf.Lerp(localVelocity.x, 0f, assistStrength * deltaSeconds);
             }
 
             if (IsBelowThreshold(thrustUp))
             {
-                localVelocity.y = Mathf.Lerp(localVelocity.y, 0f, tuning.coupledLateralDampingStrength * deltaSeconds);
+                localVelocity.y = Mathf.Lerp(localVelocity.y, 0f, assistStrength * deltaSeconds);
             }
 
             state.linearVelocity = state.rotation * localVelocity;
@@ -170,22 +182,23 @@ namespace FlightModel
 
         void ApplyFrameLockLinearAssist(float deltaSeconds, float thrustForward, float thrustRight, float thrustUp)
         {
+            float assistStrength = tuning.GetLegacySolverLimits().frameLockLinearDampingStrength;
             Vector3 localVelocity = Quaternion.Inverse(state.rotation) * state.linearVelocity;
             Vector3 before = localVelocity;
 
             if (IsBelowThreshold(thrustForward))
             {
-                localVelocity.z = Mathf.Lerp(localVelocity.z, 0f, tuning.frameLockLinearDampingStrength * deltaSeconds);
+                localVelocity.z = Mathf.Lerp(localVelocity.z, 0f, assistStrength * deltaSeconds);
             }
 
             if (IsBelowThreshold(thrustRight))
             {
-                localVelocity.x = Mathf.Lerp(localVelocity.x, 0f, tuning.frameLockLinearDampingStrength * deltaSeconds);
+                localVelocity.x = Mathf.Lerp(localVelocity.x, 0f, assistStrength * deltaSeconds);
             }
 
             if (IsBelowThreshold(thrustUp))
             {
-                localVelocity.y = Mathf.Lerp(localVelocity.y, 0f, tuning.frameLockLinearDampingStrength * deltaSeconds);
+                localVelocity.y = Mathf.Lerp(localVelocity.y, 0f, assistStrength * deltaSeconds);
             }
 
             state.linearVelocity = state.rotation * localVelocity;
@@ -207,10 +220,10 @@ namespace FlightModel
             }
 
             Vector3 localAcceleration = (afterLocalVelocity - beforeLocalVelocity) / deltaSeconds;
-            float mass = Mathf.Max(1f, tuning.massKg);
-            AddAxis(ref lastAppliedThrusterCommand.thrustRight, localAcceleration.x * mass, tuning.maxThrustNewtons.x);
-            AddAxis(ref lastAppliedThrusterCommand.thrustUp, localAcceleration.y * mass, tuning.maxThrustNewtons.y);
-            AddAxis(ref lastAppliedThrusterCommand.thrustForward, localAcceleration.z * mass, tuning.maxThrustNewtons.z);
+            ShipTuning.LegacySolverLimits legacy = tuning.GetLegacySolverLimits();
+            AddAxis(ref lastAppliedThrusterCommand.thrustRight, localAcceleration.x * legacy.massKg, legacy.maxThrustNewtons.x);
+            AddAxis(ref lastAppliedThrusterCommand.thrustUp, localAcceleration.y * legacy.massKg, legacy.maxThrustNewtons.y);
+            AddAxis(ref lastAppliedThrusterCommand.thrustForward, localAcceleration.z * legacy.massKg, legacy.maxThrustNewtons.z);
         }
 
         void AddAngularAssistCommand(Vector3 beforeAngularVelocity, Vector3 afterAngularVelocity, float deltaSeconds)
@@ -221,10 +234,10 @@ namespace FlightModel
             }
 
             Vector3 angularAcceleration = (afterAngularVelocity - beforeAngularVelocity) / deltaSeconds;
-            float mass = Mathf.Max(1f, tuning.massKg);
-            AddAxis(ref lastAppliedThrusterCommand.pitch, angularAcceleration.x * mass, tuning.maxTorque.x);
-            AddAxis(ref lastAppliedThrusterCommand.yaw, angularAcceleration.y * mass, tuning.maxTorque.y);
-            AddAxis(ref lastAppliedThrusterCommand.roll, angularAcceleration.z * mass, tuning.maxTorque.z);
+            ShipTuning.LegacySolverLimits legacy = tuning.GetLegacySolverLimits();
+            AddAxis(ref lastAppliedThrusterCommand.pitch, angularAcceleration.x * legacy.massKg, legacy.maxTorque.x);
+            AddAxis(ref lastAppliedThrusterCommand.yaw, angularAcceleration.y * legacy.massKg, legacy.maxTorque.y);
+            AddAxis(ref lastAppliedThrusterCommand.roll, angularAcceleration.z * legacy.massKg, legacy.maxTorque.z);
         }
 
         static void AddAxis(ref float field, float appliedNewtonsOrTorque, float maxNewtonsOrTorque)
