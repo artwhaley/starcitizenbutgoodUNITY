@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FlightModel
@@ -9,13 +10,39 @@ namespace FlightModel
         ShipState state;
         ShipTuning tuning;
         ShipInputCommand lastAppliedThrusterCommand;
+        readonly List<IShipControlRequestSource> externalRequestSources = new();
+        readonly ShipAutopilotRequestSource autopilotRequestSource = new();
+
+        ShipControlRequest lastPilotRequest;
+        ShipControlRequest lastAssistRequest;
+        ShipControlRequest lastBrakeRequest;
+        ShipControlRequest lastMergedControlRequest;
 
         public ShipState State => state;
         public ShipInputCommand LastAppliedThrusterCommand => lastAppliedThrusterCommand;
+        public ShipControlRequest LastPilotRequest => lastPilotRequest;
+        public ShipControlRequest LastAssistRequest => lastAssistRequest;
+        public ShipControlRequest LastBrakeRequest => lastBrakeRequest;
+        public ShipControlRequest LastMergedControlRequest => lastMergedControlRequest;
         public ShipTuning Tuning
         {
             get => tuning;
             set => tuning = value;
+        }
+
+        void Awake()
+        {
+            RegisterExternalRequestSource(autopilotRequestSource);
+        }
+
+        public void RegisterExternalRequestSource(IShipControlRequestSource source)
+        {
+            if (source == null || externalRequestSources.Contains(source))
+            {
+                return;
+            }
+
+            externalRequestSources.Add(source);
         }
 
         public void InitializeState(Vector3 position, Quaternion rotation)
@@ -47,15 +74,38 @@ namespace FlightModel
             if (deltaSeconds <= 0f || tuning == null)
             {
                 lastAppliedThrusterCommand = default;
+                lastPilotRequest = default;
+                lastAssistRequest = default;
+                lastBrakeRequest = default;
+                lastMergedControlRequest = default;
                 return;
             }
 
-            float thrustForward = Mathf.Clamp(input.thrustForward, -1f, 1f);
-            float thrustRight = Mathf.Clamp(input.thrustRight, -1f, 1f);
-            float thrustUp = Mathf.Clamp(input.thrustUp, -1f, 1f);
-            float pitch = Mathf.Clamp(input.pitch, -1f, 1f);
-            float yaw = Mathf.Clamp(input.yaw, -1f, 1f);
-            float roll = Mathf.Clamp(input.roll, -1f, 1f);
+            lastPilotRequest = ShipControlRequest.FromPilot(input);
+            lastAssistRequest = ShipControlRequestPipeline.BuildAssistRequest(state, tuning, lastPilotRequest);
+            lastBrakeRequest = ShipControlRequestPipeline.BuildBrakeRequest(state, tuning, lastPilotRequest);
+            lastMergedControlRequest = ShipControlRequestPipeline.MergeAll(
+                lastPilotRequest,
+                lastAssistRequest,
+                lastBrakeRequest,
+                externalRequestSources.ToArray(),
+                state,
+                tuning);
+
+            ShipControlRequest solverRequest = ShipControlRequestPipeline.MergeAll(
+                lastPilotRequest,
+                default,
+                default,
+                externalRequestSources.ToArray(),
+                state,
+                tuning);
+
+            float thrustForward = Mathf.Clamp(solverRequest.linearForward, -1f, 1f);
+            float thrustRight = Mathf.Clamp(solverRequest.linearRight, -1f, 1f);
+            float thrustUp = Mathf.Clamp(solverRequest.linearUp, -1f, 1f);
+            float pitch = Mathf.Clamp(solverRequest.angularPitch, -1f, 1f);
+            float yaw = Mathf.Clamp(solverRequest.angularYaw, -1f, 1f);
+            float roll = Mathf.Clamp(solverRequest.angularRoll, -1f, 1f);
             lastAppliedThrusterCommand = new ShipInputCommand
             {
                 thrustForward = thrustForward,
@@ -64,14 +114,16 @@ namespace FlightModel
                 pitch = pitch,
                 yaw = yaw,
                 roll = roll,
-                brake = input.brake
+                boost = solverRequest.boost,
+                fineControl = solverRequest.fineControl,
+                brake = solverRequest.brake
             };
 
             ShipTuning.LegacySolverLimits legacy = tuning.GetLegacySolverLimits();
-            state.boostActive = input.boost;
-            state.fineControlActive = input.fineControl;
+            state.boostActive = solverRequest.boost;
+            state.fineControlActive = solverRequest.fineControl;
 
-            float boostScale = input.boost ? legacy.boostMultiplier : 1f;
+            float boostScale = solverRequest.boost ? legacy.boostMultiplier : 1f;
             Vector3 localForce = new(
                 thrustRight * legacy.maxThrustNewtons.x,
                 thrustUp * legacy.maxThrustNewtons.y,
@@ -81,7 +133,7 @@ namespace FlightModel
             Vector3 acceleration = worldForce / legacy.massKg;
             state.linearVelocity += acceleration * deltaSeconds;
 
-            if (input.brake)
+            if (solverRequest.brake)
             {
                 Vector3 beforeBrakeVelocity = state.linearVelocity;
                 state.linearVelocity = ExponentialDamp(state.linearVelocity, legacy.brakeLinearDampingStrength, deltaSeconds);
@@ -92,10 +144,14 @@ namespace FlightModel
                 switch (state.assistMode)
                 {
                     case FlightAssistMode.CoupledAssist:
-                        ApplyCoupledLinearAssist(deltaSeconds, thrustRight, thrustUp);
+                        ApplyCoupledLinearAssist(deltaSeconds, lastPilotRequest.linearRight, lastPilotRequest.linearUp);
                         break;
                     case FlightAssistMode.FrameLockAssist:
-                        ApplyFrameLockLinearAssist(deltaSeconds, thrustForward, thrustRight, thrustUp);
+                        ApplyFrameLockLinearAssist(
+                            deltaSeconds,
+                            lastPilotRequest.linearForward,
+                            lastPilotRequest.linearRight,
+                            lastPilotRequest.linearUp);
                         break;
                 }
             }
@@ -110,7 +166,7 @@ namespace FlightModel
             Vector3 angularAcceleration = localTorque / legacy.massKg;
             state.angularVelocityRadians += angularAcceleration * deltaSeconds;
 
-            if (input.brake)
+            if (solverRequest.brake)
             {
                 Vector3 beforeBrakeAngularVelocity = state.angularVelocityRadians;
                 state.angularVelocityRadians = ExponentialDamp(
@@ -121,7 +177,11 @@ namespace FlightModel
             }
             else if (state.assistMode != FlightAssistMode.AssistOff)
             {
-                ApplyAttitudeAssist(deltaSeconds, pitch, yaw, roll);
+                ApplyAttitudeAssist(
+                    deltaSeconds,
+                    lastPilotRequest.angularPitch,
+                    lastPilotRequest.angularYaw,
+                    lastPilotRequest.angularRoll);
             }
 
             Vector3 omegaLocal = state.rotation * new Vector3(
@@ -135,6 +195,15 @@ namespace FlightModel
                 Quaternion delta = Quaternion.AngleAxis(angularSpeed * Mathf.Rad2Deg * deltaSeconds, omegaLocal / angularSpeed);
                 state.rotation = Normalize(delta * state.rotation);
             }
+
+            state.appliedOutput.requestedLocalLinear = new Vector3(
+                lastMergedControlRequest.linearRight,
+                lastMergedControlRequest.linearUp,
+                lastMergedControlRequest.linearForward);
+            state.appliedOutput.requestedLocalAngular = new Vector3(
+                lastMergedControlRequest.angularPitch,
+                lastMergedControlRequest.angularYaw,
+                lastMergedControlRequest.angularRoll);
         }
 
         void ApplyAttitudeAssist(float deltaSeconds, float pitch, float yaw, float roll)
