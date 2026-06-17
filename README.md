@@ -27,6 +27,7 @@ Do **not** use `Assets/flightmodel.unity` — that is an old scratch scene with 
 | Z/C | Roll |
 | Shift | Boost |
 | Ctrl | Brake |
+| G | Toggle fine control |
 | F | Cycle assist mode |
 | V | Toggle cockpit / external camera |
 | Space / LMB | Fire |

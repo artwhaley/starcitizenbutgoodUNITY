@@ -24,6 +24,7 @@ namespace FlightModel
         InputAction toggleCamera;
         InputAction toggleBindingsPanel;
         InputAction toggleTuningOverlay;
+        InputAction toggleFineControl;
         InputAction externalCameraZoom;
 
         public bool IsReady => flight != null;
@@ -53,6 +54,7 @@ namespace FlightModel
             toggleCamera = flight.FindAction("ToggleCamera", throwIfNotFound: true);
             toggleBindingsPanel = flight.FindAction("ToggleBindingsPanel", throwIfNotFound: true);
             toggleTuningOverlay = flight.FindAction("ToggleTuningOverlay", throwIfNotFound: true);
+            toggleFineControl = flight.FindAction("ToggleFineControl", throwIfNotFound: true);
             externalCameraZoom = flight.FindAction("ExternalCameraZoom", throwIfNotFound: true);
         }
 
@@ -103,6 +105,7 @@ namespace FlightModel
         public bool WasToggleCameraPressedThisFrame() => toggleCamera != null && toggleCamera.WasPressedThisFrame();
         public bool WasToggleBindingsPanelPressedThisFrame() => toggleBindingsPanel != null && toggleBindingsPanel.WasPressedThisFrame();
         public bool WasToggleTuningOverlayPressedThisFrame() => toggleTuningOverlay != null && toggleTuningOverlay.WasPressedThisFrame();
+        public bool WasToggleFineControlPressedThisFrame() => toggleFineControl != null && toggleFineControl.WasPressedThisFrame();
         public float ReadExternalCameraZoomDelta() => externalCameraZoom != null ? externalCameraZoom.ReadValue<float>() : 0f;
 
         static bool IsPressed(InputAction action) => action != null && action.IsPressed();

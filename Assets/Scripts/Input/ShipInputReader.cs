@@ -14,8 +14,10 @@ namespace FlightModel
         ShipInputCommand lastCommand;
         float pendingExternalZoomDelta;
         bool loggedBindingsStub;
+        bool fineControlModeActive;
 
         public ShipInputCommand LastCommand => lastCommand;
+        public bool FineControlModeActive => fineControlModeActive;
 
         public event Action ToggleAssistRequested;
         public event Action ToggleCameraRequested;
@@ -69,6 +71,11 @@ namespace FlightModel
                 ToggleTuningOverlayRequested?.Invoke();
             }
 
+            if (keyboardMouse.WasToggleFineControlPressedThisFrame())
+            {
+                fineControlModeActive = !fineControlModeActive;
+            }
+
             pendingExternalZoomDelta += keyboardMouse.ReadExternalCameraZoomDelta();
         }
 
@@ -92,6 +99,8 @@ namespace FlightModel
                 command.roll = MergeAxis(hardware.roll, command.roll);
                 command.firePrimary = hardware.firePrimary || command.firePrimary;
             }
+
+            command.fineControl = fineControlModeActive;
 
             return command;
         }
