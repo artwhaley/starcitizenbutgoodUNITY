@@ -5,8 +5,6 @@ namespace FlightModel
 {
     public class ShipFlightController : MonoBehaviour
     {
-        const float NoInputThreshold = 0.05f;
-
         ShipState state;
         ShipTuning tuning;
         ShipInputCommand lastAppliedThrusterCommand;
@@ -81,6 +79,11 @@ namespace FlightModel
                 return;
             }
 
+            if (state.currentMassKg <= 0f)
+            {
+                state.currentMassKg = tuning.dryMassKg;
+            }
+
             lastPilotRequest = ShipControlRequest.FromPilot(input);
             lastAssistRequest = ShipControlRequestPipeline.BuildAssistRequest(state, tuning, lastPilotRequest);
             lastBrakeRequest = ShipControlRequestPipeline.BuildBrakeRequest(state, tuning, lastPilotRequest);
@@ -92,238 +95,201 @@ namespace FlightModel
                 state,
                 tuning);
 
-            ShipControlRequest solverRequest = ShipControlRequestPipeline.MergeAll(
-                lastPilotRequest,
-                default,
-                default,
-                externalRequestSources.ToArray(),
-                state,
-                tuning);
+            state.boostActive = lastMergedControlRequest.boost;
+            state.fineControlActive = lastMergedControlRequest.fineControl;
 
-            float thrustForward = Mathf.Clamp(solverRequest.linearForward, -1f, 1f);
-            float thrustRight = Mathf.Clamp(solverRequest.linearRight, -1f, 1f);
-            float thrustUp = Mathf.Clamp(solverRequest.linearUp, -1f, 1f);
-            float pitch = Mathf.Clamp(solverRequest.angularPitch, -1f, 1f);
-            float yaw = Mathf.Clamp(solverRequest.angularYaw, -1f, 1f);
-            float roll = Mathf.Clamp(solverRequest.angularRoll, -1f, 1f);
-            lastAppliedThrusterCommand = new ShipInputCommand
-            {
-                thrustForward = thrustForward,
-                thrustRight = thrustRight,
-                thrustUp = thrustUp,
-                pitch = pitch,
-                yaw = yaw,
-                roll = roll,
-                boost = solverRequest.boost,
-                fineControl = solverRequest.fineControl,
-                brake = solverRequest.brake
-            };
+            float massRatio = tuning.dryMassKg / Mathf.Max(1f, state.currentMassKg);
+            float maxLinearSpeed = GetActiveMaxLinearSpeed(lastMergedControlRequest);
+            float linearAccelScale = GetActiveLinearAccelScale(lastMergedControlRequest);
+            float angularSpeedScale = GetActiveAngularSpeedScale(lastMergedControlRequest);
+            float angularAccelScale = GetActiveAngularAccelScale(lastMergedControlRequest);
 
-            ShipTuning.LegacySolverLimits legacy = tuning.GetLegacySolverLimits();
-            state.boostActive = solverRequest.boost;
-            state.fineControlActive = solverRequest.fineControl;
-
-            float boostScale = solverRequest.boost ? legacy.boostMultiplier : 1f;
-            Vector3 localForce = new(
-                thrustRight * legacy.maxThrustNewtons.x,
-                thrustUp * legacy.maxThrustNewtons.y,
-                thrustForward * legacy.maxThrustNewtons.z * boostScale);
-
-            Vector3 worldForce = state.rotation * localForce;
-            Vector3 acceleration = worldForce / legacy.massKg;
-            state.linearVelocity += acceleration * deltaSeconds;
-
-            if (solverRequest.brake)
-            {
-                Vector3 beforeBrakeVelocity = state.linearVelocity;
-                state.linearVelocity = ExponentialDamp(state.linearVelocity, legacy.brakeLinearDampingStrength, deltaSeconds);
-                AddLinearAssistCommand(beforeBrakeVelocity, state.linearVelocity, deltaSeconds);
-            }
-            else
-            {
-                switch (state.assistMode)
-                {
-                    case FlightAssistMode.CoupledAssist:
-                        ApplyCoupledLinearAssist(deltaSeconds, lastPilotRequest.linearRight, lastPilotRequest.linearUp);
-                        break;
-                    case FlightAssistMode.FrameLockAssist:
-                        ApplyFrameLockLinearAssist(
-                            deltaSeconds,
-                            lastPilotRequest.linearForward,
-                            lastPilotRequest.linearRight,
-                            lastPilotRequest.linearUp);
-                        break;
-                }
-            }
-
-            state.position += state.linearVelocity * deltaSeconds;
-
-            Vector3 localTorque = new(
-                pitch * legacy.maxTorque.x,
-                yaw * legacy.maxTorque.y,
-                roll * legacy.maxTorque.z);
-
-            Vector3 angularAcceleration = localTorque / legacy.massKg;
-            state.angularVelocityRadians += angularAcceleration * deltaSeconds;
-
-            if (solverRequest.brake)
-            {
-                Vector3 beforeBrakeAngularVelocity = state.angularVelocityRadians;
-                state.angularVelocityRadians = ExponentialDamp(
-                    state.angularVelocityRadians,
-                    legacy.brakeAngularDampingStrength,
-                    deltaSeconds);
-                AddAngularAssistCommand(beforeBrakeAngularVelocity, state.angularVelocityRadians, deltaSeconds);
-            }
-            else if (state.assistMode != FlightAssistMode.AssistOff)
-            {
-                ApplyAttitudeAssist(
-                    deltaSeconds,
-                    lastPilotRequest.angularPitch,
-                    lastPilotRequest.angularYaw,
-                    lastPilotRequest.angularRoll);
-            }
-
-            Vector3 omegaLocal = state.rotation * new Vector3(
-                state.angularVelocityRadians.x,
-                state.angularVelocityRadians.y,
-                state.angularVelocityRadians.z);
-
-            float angularSpeed = omegaLocal.magnitude;
-            if (angularSpeed > 1e-6f)
-            {
-                Quaternion delta = Quaternion.AngleAxis(angularSpeed * Mathf.Rad2Deg * deltaSeconds, omegaLocal / angularSpeed);
-                state.rotation = Normalize(delta * state.rotation);
-            }
-
-            state.appliedOutput.requestedLocalLinear = new Vector3(
+            Vector3 requestedLocalLinear = new(
                 lastMergedControlRequest.linearRight,
                 lastMergedControlRequest.linearUp,
                 lastMergedControlRequest.linearForward);
-            state.appliedOutput.requestedLocalAngular = new Vector3(
+            Vector3 requestedLocalAngular = new(
                 lastMergedControlRequest.angularPitch,
                 lastMergedControlRequest.angularYaw,
                 lastMergedControlRequest.angularRoll);
+
+            Vector3 localLinearAccel = new(
+                ResolveSignedLinearAccel(requestedLocalLinear.x, tuning.rightAccel, tuning.leftAccel, linearAccelScale) * massRatio,
+                ResolveSignedLinearAccel(requestedLocalLinear.y, tuning.upAccel, tuning.downAccel, linearAccelScale) * massRatio,
+                ResolveSignedForwardAccel(requestedLocalLinear.z, lastMergedControlRequest) * massRatio);
+
+            Vector3 localAngularAccel = new(
+                ResolveSignedAngularAccel(requestedLocalAngular.x, tuning.pitchPositiveAccel, tuning.pitchNegativeAccel, angularAccelScale) * massRatio,
+                ResolveSignedAngularAccel(requestedLocalAngular.y, tuning.yawPositiveAccel, tuning.yawNegativeAccel, angularAccelScale) * massRatio,
+                ResolveSignedAngularAccel(requestedLocalAngular.z, tuning.rollPositiveAccel, tuning.rollNegativeAccel, angularAccelScale) * massRatio);
+
+            Vector3 appliedLocalLinear = localLinearAccel / Mathf.Max(1f, linearAccelScale);
+            Vector3 appliedLocalAngular = localAngularAccel / Mathf.Max(angularAccelScale, 1e-4f);
+
+            state.linearVelocity += state.rotation * localLinearAccel * deltaSeconds;
+            state.linearVelocity = ClampWorldLinearSpeed(state.linearVelocity, maxLinearSpeed);
+
+            state.angularVelocityRadians += localAngularAccel * deltaSeconds;
+            state.angularVelocityRadians = ClampAngularVelocity(state.angularVelocityRadians, angularSpeedScale);
+
+            state.position += state.linearVelocity * deltaSeconds;
+            state.rotation = IntegrateRotation(state.rotation, state.angularVelocityRadians, deltaSeconds);
+
+            lastAppliedThrusterCommand = BuildAppliedThrusterCommand(
+                requestedLocalLinear,
+                requestedLocalAngular,
+                appliedLocalLinear,
+                appliedLocalAngular,
+                lastMergedControlRequest);
+
+            state.appliedOutput.requestedLocalLinear = requestedLocalLinear;
+            state.appliedOutput.requestedLocalAngular = requestedLocalAngular;
+            state.appliedOutput.appliedLocalLinear = appliedLocalLinear;
+            state.appliedOutput.appliedLocalAngular = appliedLocalAngular;
         }
 
-        void ApplyAttitudeAssist(float deltaSeconds, float pitch, float yaw, float roll)
+        float GetActiveMaxLinearSpeed(in ShipControlRequest request)
         {
-            float assistStrength = tuning.GetLegacySolverLimits().angularDampingStrength;
-            Vector3 before = state.angularVelocityRadians;
-
-            if (IsBelowThreshold(roll))
+            if (request.fineControl)
             {
-                state.angularVelocityRadians.z = Mathf.Lerp(state.angularVelocityRadians.z, 0f, assistStrength * deltaSeconds);
+                return tuning.fineControlMaxLinearSpeedMps;
             }
 
-            if (IsBelowThreshold(pitch))
-            {
-                state.angularVelocityRadians.x = Mathf.Lerp(state.angularVelocityRadians.x, 0f, assistStrength * deltaSeconds);
-            }
-
-            if (IsBelowThreshold(yaw))
-            {
-                state.angularVelocityRadians.y = Mathf.Lerp(state.angularVelocityRadians.y, 0f, assistStrength * deltaSeconds);
-            }
-
-            AddAngularAssistCommand(before, state.angularVelocityRadians, deltaSeconds);
+            return request.boost ? tuning.boostMaxLinearSpeedMps : tuning.maxLinearSpeedMps;
         }
 
-        void ApplyCoupledLinearAssist(float deltaSeconds, float thrustRight, float thrustUp)
+        float GetActiveLinearAccelScale(in ShipControlRequest request)
         {
-            float assistStrength = tuning.GetLegacySolverLimits().coupledLateralDampingStrength;
-            Vector3 localVelocity = Quaternion.Inverse(state.rotation) * state.linearVelocity;
-            Vector3 before = localVelocity;
-
-            if (IsBelowThreshold(thrustRight))
+            if (request.fineControl)
             {
-                localVelocity.x = Mathf.Lerp(localVelocity.x, 0f, assistStrength * deltaSeconds);
+                return tuning.fineControlLinearAccelMultiplier;
             }
 
-            if (IsBelowThreshold(thrustUp))
-            {
-                localVelocity.y = Mathf.Lerp(localVelocity.y, 0f, assistStrength * deltaSeconds);
-            }
-
-            state.linearVelocity = state.rotation * localVelocity;
-            AddLocalLinearAssistCommand(before, localVelocity, deltaSeconds);
+            return 1f;
         }
 
-        void ApplyFrameLockLinearAssist(float deltaSeconds, float thrustForward, float thrustRight, float thrustUp)
+        float GetActiveAngularSpeedScale(in ShipControlRequest request)
         {
-            float assistStrength = tuning.GetLegacySolverLimits().frameLockLinearDampingStrength;
-            Vector3 localVelocity = Quaternion.Inverse(state.rotation) * state.linearVelocity;
-            Vector3 before = localVelocity;
-
-            if (IsBelowThreshold(thrustForward))
-            {
-                localVelocity.z = Mathf.Lerp(localVelocity.z, 0f, assistStrength * deltaSeconds);
-            }
-
-            if (IsBelowThreshold(thrustRight))
-            {
-                localVelocity.x = Mathf.Lerp(localVelocity.x, 0f, assistStrength * deltaSeconds);
-            }
-
-            if (IsBelowThreshold(thrustUp))
-            {
-                localVelocity.y = Mathf.Lerp(localVelocity.y, 0f, assistStrength * deltaSeconds);
-            }
-
-            state.linearVelocity = state.rotation * localVelocity;
-            AddLocalLinearAssistCommand(before, localVelocity, deltaSeconds);
+            return request.boost ? tuning.boostAngularSpeedMultiplier : 1f;
         }
 
-        void AddLinearAssistCommand(Vector3 beforeWorldVelocity, Vector3 afterWorldVelocity, float deltaSeconds)
+        float GetActiveAngularAccelScale(in ShipControlRequest request)
         {
-            Vector3 beforeLocal = Quaternion.Inverse(state.rotation) * beforeWorldVelocity;
-            Vector3 afterLocal = Quaternion.Inverse(state.rotation) * afterWorldVelocity;
-            AddLocalLinearAssistCommand(beforeLocal, afterLocal, deltaSeconds);
-        }
-
-        void AddLocalLinearAssistCommand(Vector3 beforeLocalVelocity, Vector3 afterLocalVelocity, float deltaSeconds)
-        {
-            if (deltaSeconds <= 0f)
+            if (request.fineControl)
             {
-                return;
+                return tuning.fineControlAngularAccelMultiplier;
             }
 
-            Vector3 localAcceleration = (afterLocalVelocity - beforeLocalVelocity) / deltaSeconds;
-            ShipTuning.LegacySolverLimits legacy = tuning.GetLegacySolverLimits();
-            AddAxis(ref lastAppliedThrusterCommand.thrustRight, localAcceleration.x * legacy.massKg, legacy.maxThrustNewtons.x);
-            AddAxis(ref lastAppliedThrusterCommand.thrustUp, localAcceleration.y * legacy.massKg, legacy.maxThrustNewtons.y);
-            AddAxis(ref lastAppliedThrusterCommand.thrustForward, localAcceleration.z * legacy.massKg, legacy.maxThrustNewtons.z);
+            return 1f;
         }
 
-        void AddAngularAssistCommand(Vector3 beforeAngularVelocity, Vector3 afterAngularVelocity, float deltaSeconds)
+        float ResolveSignedForwardAccel(float axisRequest, in ShipControlRequest request)
         {
-            if (deltaSeconds <= 0f)
+            float scale = GetActiveLinearAccelScale(request);
+            if (axisRequest >= 0f)
             {
-                return;
+                float forwardAccel = request.fineControl ? tuning.maneuverForwardAccel : tuning.mainEngineForwardAccel;
+                if (request.boost && !request.fineControl)
+                {
+                    forwardAccel *= tuning.boostAccelMultiplier;
+                }
+
+                return axisRequest * forwardAccel * scale;
             }
 
-            Vector3 angularAcceleration = (afterAngularVelocity - beforeAngularVelocity) / deltaSeconds;
-            ShipTuning.LegacySolverLimits legacy = tuning.GetLegacySolverLimits();
-            AddAxis(ref lastAppliedThrusterCommand.pitch, angularAcceleration.x * legacy.massKg, legacy.maxTorque.x);
-            AddAxis(ref lastAppliedThrusterCommand.yaw, angularAcceleration.y * legacy.massKg, legacy.maxTorque.y);
-            AddAxis(ref lastAppliedThrusterCommand.roll, angularAcceleration.z * legacy.massKg, legacy.maxTorque.z);
+            return axisRequest * tuning.reverseAccel * scale;
         }
 
-        static void AddAxis(ref float field, float appliedNewtonsOrTorque, float maxNewtonsOrTorque)
+        static float ResolveSignedLinearAccel(float axisRequest, float positiveAccel, float negativeAccel, float scale)
         {
-            if (Mathf.Abs(maxNewtonsOrTorque) < 1e-5f)
+            if (axisRequest >= 0f)
             {
-                return;
+                return axisRequest * positiveAccel * scale;
             }
 
-            field = Mathf.Clamp(field + appliedNewtonsOrTorque / maxNewtonsOrTorque, -1f, 1f);
+            return axisRequest * negativeAccel * scale;
         }
 
-        static bool IsBelowThreshold(float value) => Mathf.Abs(value) < NoInputThreshold;
-
-        static Vector3 ExponentialDamp(Vector3 value, float strength, float deltaSeconds)
+        static float ResolveSignedAngularAccel(float axisRequest, float positiveAccel, float negativeAccel, float scale)
         {
-            return strength <= 0f ? value : value * Mathf.Exp(-strength * deltaSeconds);
+            if (axisRequest >= 0f)
+            {
+                return axisRequest * positiveAccel * scale;
+            }
+
+            return axisRequest * negativeAccel * scale;
+        }
+
+        static Vector3 ClampWorldLinearSpeed(Vector3 worldVelocity, float maxSpeed)
+        {
+            float speed = worldVelocity.magnitude;
+            if (speed <= maxSpeed || speed <= 1e-6f)
+            {
+                return worldVelocity;
+            }
+
+            return worldVelocity * (maxSpeed / speed);
+        }
+
+        Vector3 ClampAngularVelocity(Vector3 angularVelocity, float speedScale)
+        {
+            angularVelocity.x = Mathf.Clamp(
+                angularVelocity.x,
+                -tuning.maxPitchSpeedRad * speedScale,
+                tuning.maxPitchSpeedRad * speedScale);
+            angularVelocity.y = Mathf.Clamp(
+                angularVelocity.y,
+                -tuning.maxYawSpeedRad * speedScale,
+                tuning.maxYawSpeedRad * speedScale);
+            angularVelocity.z = Mathf.Clamp(
+                angularVelocity.z,
+                -tuning.maxRollSpeedRad * speedScale,
+                tuning.maxRollSpeedRad * speedScale);
+            return angularVelocity;
+        }
+
+        static Quaternion IntegrateRotation(Quaternion rotation, Vector3 angularVelocityRadians, float deltaSeconds)
+        {
+            Vector3 omegaWorld = rotation * angularVelocityRadians;
+            float angularSpeed = omegaWorld.magnitude;
+            if (angularSpeed <= 1e-6f)
+            {
+                return Normalize(rotation);
+            }
+
+            Quaternion delta = Quaternion.AngleAxis(angularSpeed * Mathf.Rad2Deg * deltaSeconds, omegaWorld / angularSpeed);
+            return Normalize(delta * rotation);
+        }
+
+        static ShipInputCommand BuildAppliedThrusterCommand(
+            Vector3 requestedLocalLinear,
+            Vector3 requestedLocalAngular,
+            Vector3 appliedLocalLinear,
+            Vector3 appliedLocalAngular,
+            in ShipControlRequest request)
+        {
+            return new ShipInputCommand
+            {
+                thrustForward = NormalizeAppliedAxis(requestedLocalLinear.z, appliedLocalLinear.z),
+                thrustRight = NormalizeAppliedAxis(requestedLocalLinear.x, appliedLocalLinear.x),
+                thrustUp = NormalizeAppliedAxis(requestedLocalLinear.y, appliedLocalLinear.y),
+                pitch = NormalizeAppliedAxis(requestedLocalAngular.x, appliedLocalAngular.x),
+                yaw = NormalizeAppliedAxis(requestedLocalAngular.y, appliedLocalAngular.y),
+                roll = NormalizeAppliedAxis(requestedLocalAngular.z, appliedLocalAngular.z),
+                boost = request.boost,
+                fineControl = request.fineControl,
+                brake = request.brake
+            };
+        }
+
+        static float NormalizeAppliedAxis(float requested, float applied)
+        {
+            if (Mathf.Abs(requested) < 1e-4f)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp(applied / Mathf.Max(Mathf.Abs(requested), 1e-4f), -1f, 1f);
         }
 
         static Quaternion Normalize(Quaternion q)

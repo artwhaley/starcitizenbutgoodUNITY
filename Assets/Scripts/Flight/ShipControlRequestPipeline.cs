@@ -18,25 +18,72 @@ namespace FlightModel
 
             var request = new ShipControlRequest();
             Vector3 localVelocity = Quaternion.Inverse(state.rotation) * state.linearVelocity;
-            float responsiveness = tuning.attitudeAssistResponsiveness;
 
             switch (state.assistMode)
             {
                 case FlightAssistMode.AttitudeAssist:
-                    request.angularPitch = BuildAngularCounterRequest(pilotRequest.angularPitch, state.angularVelocityRadians.x, responsiveness);
-                    request.angularYaw = BuildAngularCounterRequest(pilotRequest.angularYaw, state.angularVelocityRadians.y, responsiveness);
-                    request.angularRoll = BuildAngularCounterRequest(pilotRequest.angularRoll, state.angularVelocityRadians.z, responsiveness);
+                    request.angularPitch = BuildAngularAssistRequest(
+                        pilotRequest.angularPitch,
+                        state.angularVelocityRadians.x,
+                        tuning.maxPitchSpeedRad,
+                        tuning.pitchPositiveAccel,
+                        tuning.pitchNegativeAccel,
+                        tuning.attitudeAssistResponsiveness);
+                    request.angularYaw = BuildAngularAssistRequest(
+                        pilotRequest.angularYaw,
+                        state.angularVelocityRadians.y,
+                        tuning.maxYawSpeedRad,
+                        tuning.yawPositiveAccel,
+                        tuning.yawNegativeAccel,
+                        tuning.attitudeAssistResponsiveness);
+                    request.angularRoll = BuildAngularAssistRequest(
+                        pilotRequest.angularRoll,
+                        state.angularVelocityRadians.z,
+                        tuning.maxRollSpeedRad,
+                        tuning.rollPositiveAccel,
+                        tuning.rollNegativeAccel,
+                        tuning.attitudeAssistResponsiveness);
                     break;
 
                 case FlightAssistMode.CoupledAssist:
-                    request.linearRight = BuildLinearCounterRequest(pilotRequest.linearRight, localVelocity.x, tuning.coupledAssistResponsiveness);
-                    request.linearUp = BuildLinearCounterRequest(pilotRequest.linearUp, localVelocity.y, tuning.coupledAssistResponsiveness);
+                    request.linearRight = BuildLinearAssistRequest(
+                        pilotRequest.linearRight,
+                        localVelocity.x,
+                        tuning.maxLinearSpeedMps,
+                        tuning.rightAccel,
+                        tuning.leftAccel,
+                        tuning.coupledAssistResponsiveness);
+                    request.linearUp = BuildLinearAssistRequest(
+                        pilotRequest.linearUp,
+                        localVelocity.y,
+                        tuning.maxLinearSpeedMps,
+                        tuning.upAccel,
+                        tuning.downAccel,
+                        tuning.coupledAssistResponsiveness);
                     break;
 
                 case FlightAssistMode.FrameLockAssist:
-                    request.linearForward = BuildLinearCounterRequest(pilotRequest.linearForward, localVelocity.z, tuning.frameLockAssistResponsiveness);
-                    request.linearRight = BuildLinearCounterRequest(pilotRequest.linearRight, localVelocity.x, tuning.frameLockAssistResponsiveness);
-                    request.linearUp = BuildLinearCounterRequest(pilotRequest.linearUp, localVelocity.y, tuning.frameLockAssistResponsiveness);
+                    request.linearForward = BuildLinearAssistRequest(
+                        pilotRequest.linearForward,
+                        localVelocity.z,
+                        tuning.maxLinearSpeedMps,
+                        tuning.mainEngineForwardAccel,
+                        tuning.reverseAccel,
+                        tuning.frameLockAssistResponsiveness);
+                    request.linearRight = BuildLinearAssistRequest(
+                        pilotRequest.linearRight,
+                        localVelocity.x,
+                        tuning.maxLinearSpeedMps,
+                        tuning.rightAccel,
+                        tuning.leftAccel,
+                        tuning.frameLockAssistResponsiveness);
+                    request.linearUp = BuildLinearAssistRequest(
+                        pilotRequest.linearUp,
+                        localVelocity.y,
+                        tuning.maxLinearSpeedMps,
+                        tuning.upAccel,
+                        tuning.downAccel,
+                        tuning.frameLockAssistResponsiveness);
                     break;
             }
 
@@ -51,16 +98,15 @@ namespace FlightModel
             }
 
             Vector3 localVelocity = Quaternion.Inverse(state.rotation) * state.linearVelocity;
-            float responsiveness = tuning.brakeResponsiveness;
 
             return new ShipControlRequest
             {
-                linearForward = BuildLinearCounterRequest(0f, localVelocity.z, responsiveness),
-                linearRight = BuildLinearCounterRequest(0f, localVelocity.x, responsiveness),
-                linearUp = BuildLinearCounterRequest(0f, localVelocity.y, responsiveness),
-                angularPitch = BuildAngularCounterRequest(0f, state.angularVelocityRadians.x, responsiveness * 2f),
-                angularYaw = BuildAngularCounterRequest(0f, state.angularVelocityRadians.y, responsiveness * 2f),
-                angularRoll = BuildAngularCounterRequest(0f, state.angularVelocityRadians.z, responsiveness * 2f),
+                linearForward = BuildBrakeAxisRequest(localVelocity.z),
+                linearRight = BuildBrakeAxisRequest(localVelocity.x),
+                linearUp = BuildBrakeAxisRequest(localVelocity.y),
+                angularPitch = BuildBrakeAxisRequest(state.angularVelocityRadians.x),
+                angularYaw = BuildBrakeAxisRequest(state.angularVelocityRadians.y),
+                angularRoll = BuildBrakeAxisRequest(state.angularVelocityRadians.z),
                 brake = true
             };
         }
@@ -90,24 +136,52 @@ namespace FlightModel
             return ShipControlRequest.Merge(pilotRequest, assistRequest, brakeRequest, externalRequest);
         }
 
-        static float BuildLinearCounterRequest(float pilotAxis, float localVelocity, float responsiveness)
+        static float BuildLinearAssistRequest(
+            float pilotAxis,
+            float localVelocity,
+            float maxSpeed,
+            float positiveAccel,
+            float negativeAccel,
+            float responsiveness)
         {
             if (!IsBelowThreshold(pilotAxis) || Mathf.Abs(localVelocity) < 1e-4f)
             {
                 return 0f;
             }
 
-            return Mathf.Clamp(-Mathf.Sign(localVelocity) * responsiveness * 0.25f, -1f, 1f);
+            float opposingAccel = localVelocity > 0f ? negativeAccel : positiveAccel;
+            float desiredAccel = -Mathf.Sign(localVelocity) * opposingAccel * responsiveness;
+            float authority = Mathf.Max(opposingAccel, 1e-4f);
+            return Mathf.Clamp(desiredAccel / authority, -1f, 1f);
         }
 
-        static float BuildAngularCounterRequest(float pilotAxis, float angularVelocity, float responsiveness)
+        static float BuildAngularAssistRequest(
+            float pilotAxis,
+            float angularVelocity,
+            float maxSpeed,
+            float positiveAccel,
+            float negativeAccel,
+            float responsiveness)
         {
             if (!IsBelowThreshold(pilotAxis) || Mathf.Abs(angularVelocity) < 1e-4f)
             {
                 return 0f;
             }
 
-            return Mathf.Clamp(-Mathf.Sign(angularVelocity) * responsiveness * 0.25f, -1f, 1f);
+            float opposingAccel = angularVelocity > 0f ? negativeAccel : positiveAccel;
+            float desiredAccel = -Mathf.Sign(angularVelocity) * opposingAccel * responsiveness;
+            float authority = Mathf.Max(opposingAccel, 1e-4f);
+            return Mathf.Clamp(desiredAccel / authority, -1f, 1f);
+        }
+
+        static float BuildBrakeAxisRequest(float velocityComponent)
+        {
+            if (Mathf.Abs(velocityComponent) < 1e-4f)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp(-Mathf.Sign(velocityComponent), -1f, 1f);
         }
 
         static bool IsBelowThreshold(float value) => Mathf.Abs(value) < NoInputThreshold;

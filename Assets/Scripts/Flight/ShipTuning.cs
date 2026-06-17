@@ -97,43 +97,5 @@ namespace FlightModel
             frameLockAssistResponsiveness = other.frameLockAssistResponsiveness;
             brakeResponsiveness = other.brakeResponsiveness;
         }
-
-        /// <summary>
-        /// Temporary bridge for the legacy damping solver. Removed when T03 lands.
-        /// </summary>
-        internal LegacySolverLimits GetLegacySolverLimits()
-        {
-            float mass = Mathf.Max(1f, dryMassKg);
-            float lateralAccel = Mathf.Max(rightAccel, leftAccel, upAccel, downAccel);
-            float pitchAccel = Mathf.Max(pitchPositiveAccel, pitchNegativeAccel);
-            float yawAccel = Mathf.Max(yawPositiveAccel, yawNegativeAccel);
-            float rollAccel = Mathf.Max(rollPositiveAccel, rollNegativeAccel);
-
-            return new LegacySolverLimits
-            {
-                massKg = mass,
-                maxThrustNewtons = new Vector3(lateralAccel * mass, lateralAccel * mass, mainEngineForwardAccel * mass),
-                maxTorque = new Vector3(pitchAccel * mass, yawAccel * mass, rollAccel * mass),
-                boostMultiplier = boostAccelMultiplier,
-                angularDampingStrength = attitudeAssistResponsiveness,
-                brakeLinearDampingStrength = brakeResponsiveness,
-                brakeAngularDampingStrength = brakeResponsiveness * 2f,
-                coupledLateralDampingStrength = coupledAssistResponsiveness,
-                frameLockLinearDampingStrength = frameLockAssistResponsiveness
-            };
-        }
-
-        internal struct LegacySolverLimits
-        {
-            public float massKg;
-            public Vector3 maxThrustNewtons;
-            public Vector3 maxTorque;
-            public float boostMultiplier;
-            public float angularDampingStrength;
-            public float brakeLinearDampingStrength;
-            public float brakeAngularDampingStrength;
-            public float coupledLateralDampingStrength;
-            public float frameLockLinearDampingStrength;
-        }
     }
 }
