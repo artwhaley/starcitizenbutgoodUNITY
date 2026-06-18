@@ -124,6 +124,7 @@ namespace FlightModel
                 };
 
                 hud.SetTelemetry(flight.State, command, viewModel);
+                hud.SetWorldMarkers(cameraController != null ? cameraController.GetActiveCamera() : Camera.main, flight.State, weapon);
             }
         }
 

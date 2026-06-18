@@ -10,7 +10,9 @@ namespace FlightModel
         [SerializeField] Transform ignoreRoot;
         [SerializeField] WeaponTracerVfx tracerVfx;
         [SerializeField] float fireRatePerSecond = 20f;
+        [SerializeField] float projectileSpeedMetersPerSecond = 650f;
         [SerializeField] float maxRangeMeters = 800f;
+        [SerializeField] float targetAcquireAngleDegrees = 18f;
         [SerializeField] float debugLineDuration = 0.75f;
         [SerializeField] LayerMask hitMask = ~0;
 
@@ -18,6 +20,8 @@ namespace FlightModel
         bool wasFireHeld;
         int nextGunIndex;
         float lastMissLogTime;
+
+        public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;
 
         void Awake()
         {
@@ -96,7 +100,7 @@ namespace FlightModel
             {
                 shotEnd = shotHit.point;
                 Debug.DrawLine(shotStart, shotEnd, Color.green, debugLineDuration);
-                tracerVfx?.DrawTracer(shotStart, shotEnd, true, debugLineDuration);
+                tracerVfx?.DrawTracer(shotStart, shotEnd, true, debugLineDuration, projectileSpeedMetersPerSecond);
 
                 if (shotHit.collider.TryGetComponent<SimpleTarget>(out SimpleTarget target))
                 {
@@ -110,7 +114,7 @@ namespace FlightModel
             else
             {
                 Debug.DrawLine(shotStart, shotEnd, Color.red, debugLineDuration);
-                tracerVfx?.DrawTracer(shotStart, shotEnd, false, debugLineDuration);
+                tracerVfx?.DrawTracer(shotStart, shotEnd, false, debugLineDuration, projectileSpeedMetersPerSecond);
                 if (Time.time - lastMissLogTime > 0.5f)
                 {
                     Debug.Log("MISS");
@@ -138,6 +142,73 @@ namespace FlightModel
         bool IsIgnored(Transform hitTransform)
         {
             return ignoreRoot != null && hitTransform.IsChildOf(ignoreRoot);
+        }
+
+        public bool TryGetLeadPoint(Camera cam, out Vector3 leadPoint, out SimpleTarget target)
+        {
+            leadPoint = default;
+            target = null;
+            if (cam == null)
+            {
+                return false;
+            }
+
+            if (!SimpleTarget.TryFindBestTarget(
+                    cam.transform.position,
+                    cam.transform.forward,
+                    maxRangeMeters,
+                    targetAcquireAngleDegrees,
+                    out target))
+            {
+                return false;
+            }
+
+            Vector3 shooterPosition = cam.transform.position;
+            leadPoint = CalculateLeadPoint(
+                shooterPosition,
+                target.AimPoint,
+                target.Velocity,
+                Mathf.Max(1f, projectileSpeedMetersPerSecond));
+            return true;
+        }
+
+        static Vector3 CalculateLeadPoint(
+            Vector3 shooterPosition,
+            Vector3 targetPosition,
+            Vector3 targetVelocity,
+            float projectileSpeed)
+        {
+            Vector3 toTarget = targetPosition - shooterPosition;
+            float a = Vector3.Dot(targetVelocity, targetVelocity) - projectileSpeed * projectileSpeed;
+            float b = 2f * Vector3.Dot(toTarget, targetVelocity);
+            float c = Vector3.Dot(toTarget, toTarget);
+            float time;
+
+            if (Mathf.Abs(a) < 0.001f)
+            {
+                time = Mathf.Abs(b) > 0.001f ? Mathf.Max(0f, -c / b) : toTarget.magnitude / projectileSpeed;
+            }
+            else
+            {
+                float discriminant = b * b - 4f * a * c;
+                if (discriminant < 0f)
+                {
+                    time = toTarget.magnitude / projectileSpeed;
+                }
+                else
+                {
+                    float sqrt = Mathf.Sqrt(discriminant);
+                    float t1 = (-b - sqrt) / (2f * a);
+                    float t2 = (-b + sqrt) / (2f * a);
+                    time = t1 > 0f && t2 > 0f ? Mathf.Min(t1, t2) : Mathf.Max(t1, t2);
+                    if (time < 0f)
+                    {
+                        time = toTarget.magnitude / projectileSpeed;
+                    }
+                }
+            }
+
+            return targetPosition + targetVelocity * time;
         }
     }
 }

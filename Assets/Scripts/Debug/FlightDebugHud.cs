@@ -17,6 +17,9 @@ namespace FlightModel
         [SerializeField] Text leftText;
         [SerializeField] Text rightText;
         [SerializeField] Text reticleText;
+        [SerializeField] Text targetLeadText;
+        [SerializeField] Text progradeText;
+        [SerializeField] Text retrogradeText;
 
         void Awake()
         {
@@ -26,6 +29,9 @@ namespace FlightModel
             }
 
             EnsureReticle();
+            targetLeadText = EnsureMarker(targetLeadText, "TargetLeadPip", "o", 22, new Color(1f, 0.86f, 0.25f, 0.95f));
+            progradeText = EnsureMarker(progradeText, "ProgradeMarker", "PRO", 14, new Color(0.35f, 1f, 0.65f, 0.9f));
+            retrogradeText = EnsureMarker(retrogradeText, "RetrogradeMarker", "RET", 14, new Color(1f, 0.45f, 0.35f, 0.9f));
         }
 
         void EnsureReticle()
@@ -51,6 +57,35 @@ namespace FlightModel
             reticleText.fontSize = 20;
             reticleText.color = new Color(1f, 1f, 1f, 0.8f);
             reticleText.raycastTarget = false;
+        }
+
+        Text EnsureMarker(Text marker, string name, string label, int fontSize, Color color)
+        {
+            if (marker != null)
+            {
+                marker.raycastTarget = false;
+                marker.gameObject.SetActive(false);
+                return marker;
+            }
+
+            var go = new GameObject(name, typeof(RectTransform), typeof(Text));
+            go.transform.SetParent(transform, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(56f, 28f);
+
+            Text text = go.GetComponent<Text>();
+            text.text = label;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = fontSize;
+            text.fontStyle = FontStyle.Bold;
+            text.color = color;
+            text.raycastTarget = false;
+            text.gameObject.SetActive(false);
+            return text;
         }
 
         public void SetTelemetry(in ShipState state, in ShipInputCommand input, in FlightHudViewModel viewModel)
@@ -93,6 +128,70 @@ namespace FlightModel
                 $"ANG P/Y/R: {state.angularVelocityRadians.x:+0.000;-0.000;+0.000} {state.angularVelocityRadians.y:+0.000;-0.000;+0.000} {state.angularVelocityRadians.z:+0.000;-0.000;+0.000}\n" +
                 $"FIRE: {(input.firePrimary ? "ON" : "OFF")}\n" +
                 $"FOV: {viewModel.cockpitFov:0}";
+        }
+
+        public void SetWorldMarkers(Camera activeCamera, in ShipState state, PrimaryWeaponController weapon)
+        {
+            if (activeCamera == null)
+            {
+                HideMarker(targetLeadText);
+                HideMarker(progradeText);
+                HideMarker(retrogradeText);
+                return;
+            }
+
+            UpdateVelocityMarker(activeCamera, progradeText, state.linearVelocity);
+            UpdateVelocityMarker(activeCamera, retrogradeText, -state.linearVelocity);
+
+            if (weapon != null && weapon.TryGetLeadPoint(activeCamera, out Vector3 leadPoint, out _))
+            {
+                SetWorldMarker(activeCamera, targetLeadText, leadPoint);
+            }
+            else
+            {
+                HideMarker(targetLeadText);
+            }
+        }
+
+        void UpdateVelocityMarker(Camera activeCamera, Text marker, Vector3 direction)
+        {
+            if (direction.sqrMagnitude < 0.25f)
+            {
+                HideMarker(marker);
+                return;
+            }
+
+            Vector3 worldPoint = activeCamera.transform.position + direction.normalized * 1000f;
+            SetWorldMarker(activeCamera, marker, worldPoint);
+        }
+
+        static void SetWorldMarker(Camera activeCamera, Text marker, Vector3 worldPoint)
+        {
+            if (marker == null)
+            {
+                return;
+            }
+
+            Vector3 screenPoint = activeCamera.WorldToScreenPoint(worldPoint);
+            bool visible = screenPoint.z > 0f
+                && screenPoint.x >= 0f
+                && screenPoint.x <= Screen.width
+                && screenPoint.y >= 0f
+                && screenPoint.y <= Screen.height;
+
+            marker.gameObject.SetActive(visible);
+            if (visible)
+            {
+                marker.rectTransform.position = screenPoint;
+            }
+        }
+
+        static void HideMarker(Text marker)
+        {
+            if (marker != null)
+            {
+                marker.gameObject.SetActive(false);
+            }
         }
     }
 }
