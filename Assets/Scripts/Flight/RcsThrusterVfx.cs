@@ -12,11 +12,12 @@ namespace FlightModel
         [SerializeField] ShipFlightController flight;
         [SerializeField] GameObject puffPrefab;
         [SerializeField] float emitInterval = 0.025f;
-        [SerializeField] float inputThreshold = 0.12f;
+        [SerializeField] float inputThreshold = 0.16f;
+        [SerializeField] float visualDeadzone = 0.12f;
         [SerializeField] int puffCountPerEmit = 4;
-        [SerializeField] float minSpeedMultiplier = 0.8f;
+        [SerializeField] float minSpeedMultiplier = 0.35f;
         [SerializeField] float maxSpeedMultiplier = 1.85f;
-        [SerializeField] float minBurstMultiplier = 0.45f;
+        [SerializeField] float minBurstMultiplier = 0.12f;
         [SerializeField] float maxBurstMultiplier = 1.9f;
 
         readonly System.Collections.Generic.Dictionary<Transform, ParticleSystem> nodePuffs = new();
@@ -127,7 +128,7 @@ namespace FlightModel
                 Mathf.Abs(command.yaw),
                 Mathf.Abs(command.roll));
 
-            if (activity < inputThreshold && !command.brake)
+            if (activity < inputThreshold)
             {
                 return;
             }
@@ -149,10 +150,12 @@ namespace FlightModel
                 }
 
                 float strength = RcsThrusterMatcher.GetEmissionStrength(node.name, command);
-                if (strength <= 0f)
+                if (strength <= visualDeadzone)
                 {
                     continue;
                 }
+
+                strength = Mathf.InverseLerp(visualDeadzone, 1f, strength);
 
                 var main = particleSystem.main;
                 main.startSpeedMultiplier = Mathf.Lerp(minSpeedMultiplier, maxSpeedMultiplier, strength);

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FlightModel
@@ -5,11 +6,17 @@ namespace FlightModel
     public static class ShipControlRequestPipeline
     {
         const float NoInputThreshold = 0.05f;
+        const float LinearVelocityDeadbandMps = 0.05f;
+        const float AngularVelocityDeadbandRad = 0.01f;
+        const float BrakeLinearVelocityDeadbandMps = 0.02f;
+        const float BrakeAngularVelocityDeadbandRad = 0.005f;
+        const float DampingGentleScale = 0.8f;
 
         public static ShipControlRequest BuildAssistRequest(
             in ShipState state,
             in ShipTuning tuning,
-            in ShipControlRequest pilotRequest)
+            in ShipControlRequest pilotRequest,
+            float deltaSeconds)
         {
             if (state.assistMode == FlightAssistMode.AssistOff || pilotRequest.brake || tuning == null)
             {
@@ -22,75 +29,61 @@ namespace FlightModel
             switch (state.assistMode)
             {
                 case FlightAssistMode.AttitudeAssist:
-                    request.angularPitch = BuildAngularAssistRequest(
-                        pilotRequest.angularPitch,
-                        state.angularVelocityRadians.x,
-                        tuning.maxPitchSpeedRad,
-                        tuning.pitchPositiveAccel,
-                        tuning.pitchNegativeAccel,
-                        tuning.attitudeAssistResponsiveness);
-                    request.angularYaw = BuildAngularAssistRequest(
-                        pilotRequest.angularYaw,
-                        state.angularVelocityRadians.y,
-                        tuning.maxYawSpeedRad,
-                        tuning.yawPositiveAccel,
-                        tuning.yawNegativeAccel,
-                        tuning.attitudeAssistResponsiveness);
-                    request.angularRoll = BuildAngularAssistRequest(
-                        pilotRequest.angularRoll,
-                        state.angularVelocityRadians.z,
-                        tuning.maxRollSpeedRad,
-                        tuning.rollPositiveAccel,
-                        tuning.rollNegativeAccel,
-                        tuning.attitudeAssistResponsiveness);
+                    ApplyAttitudeAssist(ref request, state, tuning, pilotRequest, deltaSeconds);
                     break;
 
                 case FlightAssistMode.CoupledAssist:
+                    ApplyAttitudeAssist(ref request, state, tuning, pilotRequest, deltaSeconds);
                     request.linearRight = BuildLinearAssistRequest(
                         pilotRequest.linearRight,
                         localVelocity.x,
-                        tuning.maxLinearSpeedMps,
                         tuning.rightAccel,
                         tuning.leftAccel,
-                        tuning.coupledAssistResponsiveness);
+                        tuning.coupledAssistResponsiveness,
+                        deltaSeconds);
                     request.linearUp = BuildLinearAssistRequest(
                         pilotRequest.linearUp,
                         localVelocity.y,
-                        tuning.maxLinearSpeedMps,
                         tuning.upAccel,
                         tuning.downAccel,
-                        tuning.coupledAssistResponsiveness);
+                        tuning.coupledAssistResponsiveness,
+                        deltaSeconds);
                     break;
 
                 case FlightAssistMode.FrameLockAssist:
+                    ApplyAttitudeAssist(ref request, state, tuning, pilotRequest, deltaSeconds);
                     request.linearForward = BuildLinearAssistRequest(
                         pilotRequest.linearForward,
                         localVelocity.z,
-                        tuning.maxLinearSpeedMps,
                         tuning.mainEngineForwardAccel,
                         tuning.reverseAccel,
-                        tuning.frameLockAssistResponsiveness);
+                        tuning.frameLockAssistResponsiveness,
+                        deltaSeconds);
                     request.linearRight = BuildLinearAssistRequest(
                         pilotRequest.linearRight,
                         localVelocity.x,
-                        tuning.maxLinearSpeedMps,
                         tuning.rightAccel,
                         tuning.leftAccel,
-                        tuning.frameLockAssistResponsiveness);
+                        tuning.frameLockAssistResponsiveness,
+                        deltaSeconds);
                     request.linearUp = BuildLinearAssistRequest(
                         pilotRequest.linearUp,
                         localVelocity.y,
-                        tuning.maxLinearSpeedMps,
                         tuning.upAccel,
                         tuning.downAccel,
-                        tuning.frameLockAssistResponsiveness);
+                        tuning.frameLockAssistResponsiveness,
+                        deltaSeconds);
                     break;
             }
 
             return request;
         }
 
-        public static ShipControlRequest BuildBrakeRequest(in ShipState state, in ShipTuning tuning, in ShipControlRequest pilotRequest)
+        public static ShipControlRequest BuildBrakeRequest(
+            in ShipState state,
+            in ShipTuning tuning,
+            in ShipControlRequest pilotRequest,
+            float deltaSeconds)
         {
             if (!pilotRequest.brake || tuning == null)
             {
@@ -101,12 +94,48 @@ namespace FlightModel
 
             return new ShipControlRequest
             {
-                linearForward = BuildBrakeAxisRequest(localVelocity.z),
-                linearRight = BuildBrakeAxisRequest(localVelocity.x),
-                linearUp = BuildBrakeAxisRequest(localVelocity.y),
-                angularPitch = BuildBrakeAxisRequest(state.angularVelocityRadians.x),
-                angularYaw = BuildBrakeAxisRequest(state.angularVelocityRadians.y),
-                angularRoll = BuildBrakeAxisRequest(state.angularVelocityRadians.z),
+                linearForward = BuildBrakeAxisRequest(
+                    localVelocity.z,
+                    tuning.mainEngineForwardAccel,
+                    tuning.reverseAccel,
+                    tuning.brakeResponsiveness,
+                    BrakeLinearVelocityDeadbandMps,
+                    deltaSeconds),
+                linearRight = BuildBrakeAxisRequest(
+                    localVelocity.x,
+                    tuning.rightAccel,
+                    tuning.leftAccel,
+                    tuning.brakeResponsiveness,
+                    BrakeLinearVelocityDeadbandMps,
+                    deltaSeconds),
+                linearUp = BuildBrakeAxisRequest(
+                    localVelocity.y,
+                    tuning.upAccel,
+                    tuning.downAccel,
+                    tuning.brakeResponsiveness,
+                    BrakeLinearVelocityDeadbandMps,
+                    deltaSeconds),
+                angularPitch = BuildBrakeAxisRequest(
+                    state.angularVelocityRadians.x,
+                    tuning.pitchPositiveAccel,
+                    tuning.pitchNegativeAccel,
+                    tuning.brakeResponsiveness,
+                    BrakeAngularVelocityDeadbandRad,
+                    deltaSeconds),
+                angularYaw = BuildBrakeAxisRequest(
+                    state.angularVelocityRadians.y,
+                    tuning.yawPositiveAccel,
+                    tuning.yawNegativeAccel,
+                    tuning.brakeResponsiveness,
+                    BrakeAngularVelocityDeadbandRad,
+                    deltaSeconds),
+                angularRoll = BuildBrakeAxisRequest(
+                    state.angularVelocityRadians.z,
+                    tuning.rollPositiveAccel,
+                    tuning.rollNegativeAccel,
+                    tuning.brakeResponsiveness,
+                    BrakeAngularVelocityDeadbandRad,
+                    deltaSeconds),
                 brake = true
             };
         }
@@ -115,14 +144,14 @@ namespace FlightModel
             in ShipControlRequest pilotRequest,
             in ShipControlRequest assistRequest,
             in ShipControlRequest brakeRequest,
-            IShipControlRequestSource[] externalSources,
+            IReadOnlyList<IShipControlRequestSource> externalSources,
             in ShipState state,
             in ShipTuning tuning)
         {
             ShipControlRequest externalRequest = default;
             if (externalSources != null)
             {
-                for (int i = 0; i < externalSources.Length; i++)
+                for (int i = 0; i < externalSources.Count; i++)
                 {
                     IShipControlRequestSource source = externalSources[i];
                     if (source != null
@@ -136,52 +165,123 @@ namespace FlightModel
             return ShipControlRequest.Merge(pilotRequest, assistRequest, brakeRequest, externalRequest);
         }
 
+        static void ApplyAttitudeAssist(
+            ref ShipControlRequest request,
+            in ShipState state,
+            in ShipTuning tuning,
+            in ShipControlRequest pilotRequest,
+            float deltaSeconds)
+        {
+            request.angularPitch = BuildAngularAssistRequest(
+                pilotRequest.angularPitch,
+                state.angularVelocityRadians.x,
+                tuning.pitchPositiveAccel,
+                tuning.pitchNegativeAccel,
+                tuning.attitudeAssistResponsiveness,
+                deltaSeconds);
+            request.angularYaw = BuildAngularAssistRequest(
+                pilotRequest.angularYaw,
+                state.angularVelocityRadians.y,
+                tuning.yawPositiveAccel,
+                tuning.yawNegativeAccel,
+                tuning.attitudeAssistResponsiveness,
+                deltaSeconds);
+            request.angularRoll = BuildAngularAssistRequest(
+                pilotRequest.angularRoll,
+                state.angularVelocityRadians.z,
+                tuning.rollPositiveAccel,
+                tuning.rollNegativeAccel,
+                tuning.attitudeAssistResponsiveness,
+                deltaSeconds);
+        }
+
         static float BuildLinearAssistRequest(
             float pilotAxis,
             float localVelocity,
-            float maxSpeed,
             float positiveAccel,
             float negativeAccel,
-            float responsiveness)
+            float responsiveness,
+            float deltaSeconds)
         {
-            if (!IsBelowThreshold(pilotAxis) || Mathf.Abs(localVelocity) < 1e-4f)
+            if (!IsBelowThreshold(pilotAxis)
+                || Mathf.Abs(localVelocity) <= LinearVelocityDeadbandMps
+                || responsiveness <= 0f)
             {
                 return 0f;
             }
 
-            float opposingAccel = localVelocity > 0f ? negativeAccel : positiveAccel;
-            float desiredAccel = -Mathf.Sign(localVelocity) * opposingAccel * responsiveness;
-            float authority = Mathf.Max(opposingAccel, 1e-4f);
-            return Mathf.Clamp(desiredAccel / authority, -1f, 1f);
+            return BuildVelocityDampingRequest(
+                localVelocity,
+                positiveAccel,
+                negativeAccel,
+                responsiveness,
+                LinearVelocityDeadbandMps,
+                deltaSeconds);
         }
 
         static float BuildAngularAssistRequest(
             float pilotAxis,
             float angularVelocity,
-            float maxSpeed,
             float positiveAccel,
             float negativeAccel,
-            float responsiveness)
+            float responsiveness,
+            float deltaSeconds)
         {
-            if (!IsBelowThreshold(pilotAxis) || Mathf.Abs(angularVelocity) < 1e-4f)
+            if (!IsBelowThreshold(pilotAxis)
+                || Mathf.Abs(angularVelocity) <= AngularVelocityDeadbandRad
+                || responsiveness <= 0f)
             {
                 return 0f;
             }
 
-            float opposingAccel = angularVelocity > 0f ? negativeAccel : positiveAccel;
-            float desiredAccel = -Mathf.Sign(angularVelocity) * opposingAccel * responsiveness;
-            float authority = Mathf.Max(opposingAccel, 1e-4f);
-            return Mathf.Clamp(desiredAccel / authority, -1f, 1f);
+            return BuildVelocityDampingRequest(
+                angularVelocity,
+                positiveAccel,
+                negativeAccel,
+                responsiveness,
+                AngularVelocityDeadbandRad,
+                deltaSeconds);
         }
 
-        static float BuildBrakeAxisRequest(float velocityComponent)
+        static float BuildBrakeAxisRequest(
+            float velocityComponent,
+            float positiveAccel,
+            float negativeAccel,
+            float responsiveness,
+            float deadband,
+            float deltaSeconds)
+            => BuildVelocityDampingRequest(
+                velocityComponent,
+                positiveAccel,
+                negativeAccel,
+                responsiveness,
+                deadband,
+                deltaSeconds);
+
+        static float BuildVelocityDampingRequest(
+            float velocity,
+            float positiveAccel,
+            float negativeAccel,
+            float responsiveness,
+            float deadband,
+            float deltaSeconds)
         {
-            if (Mathf.Abs(velocityComponent) < 1e-4f)
+            float speed = Mathf.Abs(velocity);
+            if (speed <= deadband)
             {
                 return 0f;
             }
 
-            return Mathf.Clamp(-Mathf.Sign(velocityComponent), -1f, 1f);
+            float desiredAccelMagnitude = speed * responsiveness * DampingGentleScale;
+            if (deltaSeconds > 1e-5f)
+            {
+                desiredAccelMagnitude = Mathf.Min(desiredAccelMagnitude, speed / deltaSeconds);
+            }
+
+            float desiredAccel = -Mathf.Sign(velocity) * desiredAccelMagnitude;
+            float opposingAuthority = velocity > 0f ? negativeAccel : positiveAccel;
+            float authority = Mathf.Max(opposingAuthority, 1e-4f);
+            return Mathf.Clamp(desiredAccel / authority, -1f, 1f);
         }
 
         static bool IsBelowThreshold(float value) => Mathf.Abs(value) < NoInputThreshold;

@@ -44,6 +44,10 @@ Keyboard bindings live in `Assets/Settings/InputProfiles/FlightInputActions.inpu
 
 See [Docs/flight_playtest.md](Docs/flight_playtest.md) for the U-wing solver/VFX verification checklist.
 
+## Project rules
+
+Read [Docs/project_rules.md](Docs/project_rules.md) before making architecture, prefab, scene-wiring, docking, weapon, collision, or authority changes.
+
 ## U-wing art (later)
 
 Import FBX to `Assets/Art/Ships/UWing/Source/`, replace cube under player ship, run **FlightModel -> Auto-Wire Ship References**.

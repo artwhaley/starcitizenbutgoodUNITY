@@ -11,6 +11,8 @@ namespace FlightModel
         [SerializeField] GameObject root;
         [SerializeField] AxisBindingRow[] axisRows;
         [SerializeField] FireBindingRow fireRow;
+        [SerializeField] FireBindingRow boostRow;
+        [SerializeField] FireBindingRow brakeRow;
         [SerializeField] Toggle autoSaveToggle;
         [SerializeField] Button refreshButton;
         [SerializeField] Button saveButton;
@@ -38,8 +40,19 @@ namespace FlightModel
 
             if (fireRow != null)
             {
-                fireRow.Initialize(provider, OnBindingChanged);
+                fireRow.Initialize("Fire Primary", provider, () => provider.Bindings.firePrimary, OnBindingChanged);
             }
+
+            if (boostRow != null)
+            {
+                boostRow.Initialize("Boost", provider, () => provider.Bindings.boost, OnBindingChanged);
+            }
+
+            if (brakeRow != null)
+            {
+                brakeRow.Initialize("Brake", provider, () => provider.Bindings.brake, OnBindingChanged);
+            }
+
             if (refreshButton != null)
             {
                 refreshButton.onClick.AddListener(RefreshDevices);
@@ -133,6 +146,7 @@ namespace FlightModel
             probeMonitor.Initialize(provider, contentRect);
 
             RectTransform columnsRect = CreateBindingColumns(contentRect, out RectTransform leftColumn, out RectTransform rightColumn);
+            EnsureButtonRows();
 
             int rowIndex = 0;
             foreach (AxisBindingRow row in axisRows)
@@ -149,6 +163,18 @@ namespace FlightModel
             if (fireRow != null)
             {
                 ReparentForScroll(fireRow.transform, rowIndex % 2 == 0 ? leftColumn : rightColumn);
+                rowIndex++;
+            }
+
+            if (boostRow != null)
+            {
+                ReparentForScroll(boostRow.transform, rowIndex % 2 == 0 ? leftColumn : rightColumn);
+                rowIndex++;
+            }
+
+            if (brakeRow != null)
+            {
+                ReparentForScroll(brakeRow.transform, rowIndex % 2 == 0 ? leftColumn : rightColumn);
             }
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(columnsRect);
@@ -339,6 +365,8 @@ namespace FlightModel
             }
 
             fireRow?.RefreshLiveReadout();
+            boostRow?.RefreshLiveReadout();
+            brakeRow?.RefreshLiveReadout();
         }
 
         void RefreshDevices()
@@ -359,6 +387,8 @@ namespace FlightModel
             }
 
             fireRow?.RefreshDeviceList();
+            boostRow?.RefreshDeviceList();
+            brakeRow?.RefreshDeviceList();
         }
 
         void OnBindingChanged()
@@ -370,6 +400,31 @@ namespace FlightModel
         }
 
         void SaveBindings() => provider.SaveBindings();
+
+        void EnsureButtonRows()
+        {
+            if (fireRow == null)
+            {
+                fireRow = CreateButtonRow("FirePrimaryBindingRow");
+            }
+
+            if (boostRow == null)
+            {
+                boostRow = CreateButtonRow("BoostBindingRow");
+            }
+
+            if (brakeRow == null)
+            {
+                brakeRow = CreateButtonRow("BrakeBindingRow");
+            }
+        }
+
+        FireBindingRow CreateButtonRow(string rowName)
+        {
+            GameObject rowGo = new(rowName, typeof(RectTransform), typeof(FireBindingRow));
+            rowGo.transform.SetParent(root.transform, false);
+            return rowGo.GetComponent<FireBindingRow>();
+        }
 
         static void RepairDropdowns(GameObject panelRoot)
         {

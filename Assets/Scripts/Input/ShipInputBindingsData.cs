@@ -8,6 +8,8 @@ namespace FlightModel
         public int schemaVersion = ShipInputBindingsStore.CurrentSchemaVersion;
         public HardwareAxisBinding[] axisBindings = CreateDefaultAxisBindings();
         public HardwareButtonBinding firePrimary = new();
+        public HardwareButtonBinding boost = new();
+        public HardwareButtonBinding brake = new();
 
         static HardwareAxisBinding[] CreateDefaultAxisBindings()
         {

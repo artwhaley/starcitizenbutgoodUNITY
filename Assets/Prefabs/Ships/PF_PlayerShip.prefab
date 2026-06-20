@@ -213,6 +213,19 @@ GameObject:
   - component: {fileID: 2513495177230020978}
   - component: {fileID: 7251150921521859341}
   - component: {fileID: 7283540115129680020}
+  - component: {fileID: 1110000000000000001}
+  - component: {fileID: 1110000000000000002}
+  - component: {fileID: 1110000000000000003}
+  - component: {fileID: 1110000000000000004}
+  - component: {fileID: 1110000000000000005}
+  - component: {fileID: 1110000000000000030}
+  - component: {fileID: 1110000000000000031}
+  - component: {fileID: 1110000000000000032}
+  - component: {fileID: 1110000000000000033}
+  - component: {fileID: 1110000000000000034}
+  - component: {fileID: 1110000000000000035}
+  - component: {fileID: 1110000000000000036}
+  - component: {fileID: 1110000000000000037}
   m_Layer: 0
   m_Name: PF_PlayerShip
   m_TagString: Untagged
@@ -237,6 +250,7 @@ Transform:
   - {fileID: 5803870486137161872}
   - {fileID: 7877256006747057476}
   - {fileID: 2495044546651982767}
+  - {fileID: 1110000000000000011}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3762765509269854825
@@ -251,24 +265,175 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1452b05ff3499974abf3240d0fd9ac06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlightModel.PlayerShipController
+  vehicle: {fileID: 1110000000000000030}
+--- !u!114 &1110000000000000030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31efade3839a42638cfb4bcb8c7cf57e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipVehicle
   cogTransform: {fileID: 205908325432324136}
   flight: {fileID: 4979409953727399992}
+  authority: {fileID: 1110000000000000002}
+  presentation: {fileID: 1110000000000000003}
+  tuning: {fileID: 11400000, guid: 45de8d866f4b8a84cabc308d0a53662d, type: 2}
+  spawnPosition: {x: 50, y: 2, z: 0}
+  spawnRotation: {x: 0, y: 0, z: 0, w: 1}
   input: {fileID: 2372531095680497845}
   hud: {fileID: 8333354154546225216}
   cameraController: {fileID: 7283540115129680020}
   weapon: {fileID: 2513495177230020978}
-  tuning: {fileID: 11400000, guid: 45de8d866f4b8a84cabc308d0a53662d, type: 2}
-  tuningLibrary: {fileID: 11400000, guid: 9457081e225f8614ea7cc35f4d3ee9d9, type: 2}
   joystickProvider: {fileID: 7848901906631587092}
   bindingsPanel: {fileID: 7681237798715342444}
-  tuningOverlay: {fileID: 7664166951068087745}
-  rcsVfx: {fileID: 0}
-  engineGlowVfx: {fileID: 0}
+  rcsVfx: {fileID: 1110000000000000004}
+  engineGlowVfx: {fileID: 1110000000000000005}
   audioHooks: {fileID: 7251150921521859341}
   rcsPuffPrefab: {fileID: 2141355213058748203, guid: 7ce042474acdeb645b7b0ef5dbba9048, type: 3}
   enginePlumePrefab: {fileID: 0}
-  spawnPosition: {x: 50, y: 2, z: 0}
-  spawnRotation: {x: 0, y: 0, z: 0, w: 1}
+  shipDockingNode: {fileID: 0}
+  dockingTargetProvider: {fileID: 1110000000000000033}
+  dockingHud: {fileID: 0}
+  dockingModeController: {fileID: 1110000000000000036}
+  dockableShip: {fileID: 1110000000000000034}
+  dockingCaptureController: {fileID: 1110000000000000035}
+  dockingCaptureSettings:
+    captureDistanceMeters: 0.5
+    snapDistanceMeters: 0.08
+    maxCaptureAngleDegrees: 8
+    maxClosureSpeedMetersPerSecond: 1.5
+    magneticPositionStrength: 6
+    magneticRotationStrength: 8
+    maxMagneticAcceleration: 8
+    requireShipPortDeployed: 1
+    requireStationPortAvailable: 1
+  pilotSeat: {fileID: 1110000000000000031}
+--- !u!114 &1110000000000000031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 967fb6a8091a4ad987437285e3f6304b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipPilotSeat
+  vehicle: {fileID: 1110000000000000030}
+  seatTransform: {fileID: 205908325432324136}
+--- !u!114 &1110000000000000032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dea5e6e2c1444d9975c1d31e2a763a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.LocalPlayerVehicleController
+  input: {fileID: 2372531095680497845}
+  joystickProvider: {fileID: 7848901906631587092}
+  bindingsPanel: {fileID: 7681237798715342444}
+  startingSeat: {fileID: 1110000000000000031}
+  enterStartingSeatOnStart: 1
+--- !u!114 &1110000000000000033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6e9e6617446c174ca2ba97082b3571a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.Docking.DockingTargetProvider
+  explicitTarget: {fileID: 0}
+  searchOrigin: {fileID: 0}
+  fallbackSearchRangeMeters: 100
+--- !u!114 &1110000000000000034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0bb3ce07a261ea498b1379ada4f78e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.Docking.DockableShip
+  shipDockingNode: {fileID: 0}
+  flight: {fileID: 4979409953727399992}
+  targetProvider: {fileID: 1110000000000000033}
+  shipRoot: {fileID: 205908325432324136}
+--- !u!114 &1110000000000000035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f8720737b8c9be45877b3b1caebc78a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.Docking.DockingCaptureController
+  dockableShip: {fileID: 1110000000000000034}
+  flight: {fileID: 4979409953727399992}
+  settings:
+    captureDistanceMeters: 0.5
+    snapDistanceMeters: 0.08
+    maxCaptureAngleDegrees: 8
+    maxClosureSpeedMetersPerSecond: 1.5
+    magneticPositionStrength: 6
+    magneticRotationStrength: 8
+    maxMagneticAcceleration: 8
+    requireShipPortDeployed: 1
+    requireStationPortAvailable: 1
+  undockOffsetMeters: 1.25
+  undockVelocityMetersPerSecond: 0.5
+  recaptureUnlockDistanceMeters: 1
+  maxMagneticAngularSpeedRad: 1.5
+  dockedVelocityDecayPerSecond: 8
+  logCaptureDiagnostics: 1
+--- !u!114 &1110000000000000036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecf68ea5c7c948f42afba92034cab427, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.Docking.DockingModeController
+  dockingNode: {fileID: 0}
+  targetProvider: {fileID: 1110000000000000033}
+  cameraController: {fileID: 7283540115129680020}
+  dockingHud: {fileID: 0}
+--- !u!114 &1110000000000000037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4d89d2731405134690ab912f9b91757, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipWeaponHardpoints
+  hardpoints: []
 --- !u!114 &2372531095680497845
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -306,6 +471,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c284866c2267bae47aac56427b044c8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlightModel.PrimaryWeaponController
+  authority: {fileID: 1110000000000000002}
   gunNode1: {fileID: 0}
   gunNode2: {fileID: 0}
   cameraController: {fileID: 7283540115129680020}
@@ -363,6 +529,104 @@ MonoBehaviour:
   panSpeed: 90
   tiltSpeed: 60
   zoomSpeed: 2
+--- !u!114 &1110000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.World.WorldEntity
+  kind: 1
+  serializedEntityId: 0
+--- !u!114 &1110000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 656ed42c687898f44a3333590d2ed7ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.LocalGameAuthority
+  weaponDefinition: {fileID: 0}
+  hardpoints: {fileID: 1110000000000000037}
+  playerShipRoot: {fileID: 0}
+  viewPool: {fileID: 0}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  controlledFlight: {fileID: 0}
+  dockingCapture: {fileID: 1110000000000000035}
+--- !u!114 &1110000000000000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipPresentationController
+  cogTransform: {fileID: 0}
+  flight: {fileID: 0}
+  input: {fileID: 0}
+  hud: {fileID: 0}
+  cameraController: {fileID: 0}
+  weapon: {fileID: 0}
+  audioHooks: {fileID: 0}
+--- !u!114 &1110000000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e1d926c8b4dc4042a5d4e1d3d04343d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.RcsThrusterVfx
+  visuals: {fileID: 0}
+  input: {fileID: 0}
+  flight: {fileID: 0}
+  puffPrefab: {fileID: 0}
+  emitInterval: 0.025
+  inputThreshold: 0.12
+  puffCountPerEmit: 4
+  minSpeedMultiplier: 0.8
+  maxSpeedMultiplier: 1.85
+  minBurstMultiplier: 0.45
+  maxBurstMultiplier: 1.9
+--- !u!114 &1110000000000000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943845295001471308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3e0e898cd6db234d90b165f6dd21ffc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.EngineGlowVfx
+  visuals: {fileID: 0}
+  input: {fileID: 0}
+  flight: {fileID: 0}
+  plumePrefab: {fileID: 0}
+  inputThreshold: 0.05
+  plumeEmissionRate: 82
+  boostEmissionMultiplier: 2.2
+  plumeSpawnOffset: 0.28
+  plumeColor: {r: 0.6, g: 0.88, b: 1, a: 0.9}
 --- !u!1 &4011694177419433399
 GameObject:
   m_ObjectHideFlags: 0
@@ -460,6 +724,7 @@ Transform:
   m_Children:
   - {fileID: 8320741337541035346}
   - {fileID: 8834029975467067762}
+  - {fileID: 1110000000000000021}
   m_Father: {fileID: 9112447696106163792}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4979409953727399992
@@ -474,6 +739,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e532ad3903b6cf1488128bd1d1b60d63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipFlightController
+  collisionProxy: {fileID: 1110000000000000024}
 --- !u!1 &9181371868891253460
 GameObject:
   m_ObjectHideFlags: 0
@@ -506,6 +772,158 @@ Transform:
   - {fileID: 4983676322627147867}
   m_Father: {fileID: 8834029975467067762}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1110000000000000010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1110000000000000011}
+  - component: {fileID: 1110000000000000012}
+  m_Layer: 0
+  m_Name: ProjectileViewPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1110000000000000011
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1110000000000000010}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9112447696106163792}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1110000000000000012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1110000000000000010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b82edfe04da18f46a37774a9e029db3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ProjectileViewPool
+  poolSize: 60
+  boltLengthMeters: 4
+  defaultColor: {r: 1.8, g: 2.4, b: 1.2, a: 1}
+--- !u!1 &1110000000000000020
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1110000000000000021}
+  - component: {fileID: 1110000000000000022}
+  - component: {fileID: 1110000000000000023}
+  - component: {fileID: 1110000000000000024}
+  m_Layer: 7
+  m_Name: ShipCollisionProxy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1110000000000000021
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1110000000000000020}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 205908325432324136}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &1110000000000000022
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1110000000000000020}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 4
+  m_Height: 12
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!54 &1110000000000000023
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1110000000000000020}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &1110000000000000024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1110000000000000020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5e5f7a37bbc5914196c584aa2931a13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipCollisionProxy
+  shipRoot: {fileID: 205908325432324136}
+  collisionRoot: {fileID: 1110000000000000021}
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 2304
+  restitution: 0.35
+  tangentialDamping: 0.85
+  skinWidth: 0.05
+  shipRigidbody: {fileID: 1110000000000000023}
 --- !u!1001 &7128726898118886060
 PrefabInstance:
   m_ObjectHideFlags: 0

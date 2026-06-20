@@ -38,3 +38,17 @@ compile.log
 rebuild.log
 [Aa]ssets/AssetStoreTools*
 [Aa]ssets/Plugins/Editor/JetBrains*
+
+# Local/downloaded asset packs. Keep source-controlled gameplay code and authored
+# project assets independent of these unless their licenses allow repo storage.
+[Aa]ssets/PolygonSciFiSpace/
+[Aa]ssets/PolygonSciFiSpace.meta
+[Aa]ssets/Mirza/
+[Aa]ssets/Mirza.meta
+
+# Local scratch/reference exports and screenshots
+MMO Space Game Design.html
+MMO Space Game Design_files/
+/*.jfif
+/*.png
+nul

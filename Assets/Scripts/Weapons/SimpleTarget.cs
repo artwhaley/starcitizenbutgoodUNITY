@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace FlightModel
 {
-    public class SimpleTarget : MonoBehaviour
+    public class SimpleTarget : MonoBehaviour, IHitReceiver
     {
         static readonly System.Collections.Generic.List<SimpleTarget> ActiveTargets = new();
 
@@ -104,10 +104,10 @@ namespace FlightModel
             }
         }
 
-        public void RegisterHit()
+        public void ApplyHit(in HitEvent hit)
         {
             remainingHitPoints--;
-            Debug.Log("TARGET HIT");
+            Debug.Log($"TARGET HIT by projectile {hit.projectileId} at {hit.point}");
 
             if (meshRenderer != null)
             {
@@ -119,6 +119,18 @@ namespace FlightModel
             {
                 gameObject.SetActive(false);
             }
+        }
+
+        public void RegisterHit()
+        {
+            ApplyHit(new HitEvent
+            {
+                projectileId = 0,
+                ownerEntityId = 0,
+                point = transform.position,
+                normal = Vector3.up,
+                damage = 1f
+            });
         }
 
         public static bool TryFindBestTarget(

@@ -12,12 +12,12 @@ TagManager:
   - Water
   - UI
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - ShipHull
+  - Station
+  - DockingTrigger
+  - ProjectileHit
+  - MineableAsteroid
+  - SceneryAsteroid
   - 
   - 
   - 

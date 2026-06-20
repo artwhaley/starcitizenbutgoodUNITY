@@ -120,11 +120,6 @@ namespace FlightModel
                 AddStrength(ref strength, command.thrustForward, ThrustBackward, canonical);
             }
 
-            if (command.brake)
-            {
-                strength = Mathf.Max(strength, Random.value < 0.08f ? 0.6f : 0f);
-            }
-
             return strength;
         }
 

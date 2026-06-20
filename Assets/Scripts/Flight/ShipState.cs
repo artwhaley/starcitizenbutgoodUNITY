@@ -1,3 +1,4 @@
+using FlightModel.World;
 using UnityEngine;
 
 namespace FlightModel
@@ -21,7 +22,7 @@ namespace FlightModel
         public Vector3 linearVelocity;
         public Vector3 angularVelocityRadians;
         public FlightAssistMode assistMode;
-        public string frameId;
+        public ReferenceFrameId frameId;
 
         public bool boostActive;
         public bool fineControlActive;

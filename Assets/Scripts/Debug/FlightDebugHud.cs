@@ -16,10 +16,30 @@ namespace FlightModel
     {
         [SerializeField] Text leftText;
         [SerializeField] Text rightText;
+        [SerializeField] Text fuelText;
+        [SerializeField] Text thrustDebugText;
         [SerializeField] Text reticleText;
         [SerializeField] Text targetLeadText;
         [SerializeField] Text progradeText;
         [SerializeField] Text retrogradeText;
+
+        bool debugOverlayVisible;
+
+        public void ToggleDebugOverlay() => SetDebugOverlayVisible(!debugOverlayVisible);
+
+        public void SetDebugOverlayVisible(bool visible)
+        {
+            // Always drive the underlying GameObject (if wired) AND update
+            // the bool unconditionally — cheap, and closes a hole where the
+            // bool could flip to true while the panel stayed hidden if the
+            // prefab field got assigned after the first toggle.
+            if (thrustDebugText != null)
+            {
+                thrustDebugText.gameObject.SetActive(visible);
+            }
+
+            debugOverlayVisible = visible;
+        }
 
         void Awake()
         {
@@ -32,6 +52,9 @@ namespace FlightModel
             targetLeadText = EnsureMarker(targetLeadText, "TargetLeadPip", "o", 22, new Color(1f, 0.86f, 0.25f, 0.95f));
             progradeText = EnsureMarker(progradeText, "ProgradeMarker", "PRO", 14, new Color(0.35f, 1f, 0.65f, 0.9f));
             retrogradeText = EnsureMarker(retrogradeText, "RetrogradeMarker", "RET", 14, new Color(1f, 0.45f, 0.35f, 0.9f));
+            DisableDuplicateMarkers("TargetLeadPip", targetLeadText);
+            DisableDuplicateMarkers("ProgradeMarker", progradeText);
+            DisableDuplicateMarkers("RetrogradeMarker", retrogradeText);
         }
 
         void EnsureReticle()
@@ -61,8 +84,18 @@ namespace FlightModel
 
         Text EnsureMarker(Text marker, string name, string label, int fontSize, Color color)
         {
+            if (marker == null)
+            {
+                Transform existing = transform.Find(name);
+                if (existing != null)
+                {
+                    marker = existing.GetComponent<Text>();
+                }
+            }
+
             if (marker != null)
             {
+                ConfigureMarker(marker, label, fontSize, color);
                 marker.raycastTarget = false;
                 marker.gameObject.SetActive(false);
                 return marker;
@@ -77,6 +110,26 @@ namespace FlightModel
             rect.sizeDelta = new Vector2(56f, 28f);
 
             Text text = go.GetComponent<Text>();
+            ConfigureMarker(text, label, fontSize, color);
+            text.gameObject.SetActive(false);
+            return text;
+        }
+
+        void DisableDuplicateMarkers(string markerName, Text keep)
+        {
+            Text[] markers = GetComponentsInChildren<Text>(true);
+            for (int i = 0; i < markers.Length; i++)
+            {
+                Text marker = markers[i];
+                if (marker != null && marker != keep && marker.name == markerName)
+                {
+                    marker.gameObject.SetActive(false);
+                }
+            }
+        }
+
+        static void ConfigureMarker(Text text, string label, int fontSize, Color color)
+        {
             text.text = label;
             text.alignment = TextAnchor.MiddleCenter;
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -84,41 +137,48 @@ namespace FlightModel
             text.fontStyle = FontStyle.Bold;
             text.color = color;
             text.raycastTarget = false;
-            text.gameObject.SetActive(false);
-            return text;
         }
 
         public void SetTelemetry(in ShipState state, in ShipInputCommand input, in FlightHudViewModel viewModel)
         {
-            if (leftText == null || rightText == null)
+            if (leftText == null || rightText == null || fuelText == null)
             {
                 return;
             }
 
             float speed = state.linearVelocity.magnitude;
+
+            // Left sub-column (anchored ~25% from screen center on the left):
+            // Assist Mode / Speed / Brake.
+            leftText.text =
+                $"ASSIST (F): {state.assistMode}\n" +
+                $"SPEED: {speed:0.0} m/s\n" +
+                $"BRAKE: {(input.brake ? "ON" : "OFF")}";
+
+            // Right sub-column (anchored ~25% from screen center on the right):
+            // Boost / Fine Control.
+            rightText.text =
+                $"BOOST: {(state.boostActive ? "ON" : "OFF")}\n" +
+                $"FINE (G): {(state.fineControlActive ? "ON" : "OFF")}";
+
+            // Bottom-left block: propellant totals.
+            fuelText.text =
+                $"FUEL: {state.remainingFuelKg:0.0} kg\n" +
+                $"HYPR: {state.remainingHypergolicKg:0.0} kg";
+
+            // Developer debug overlay (top-center panel).
+            // Skipped entirely while hidden to avoid per-frame string allocations.
+            if (!debugOverlayVisible || thrustDebugText == null)
+            {
+                return;
+            }
+
             Vector3 requestedLinear = state.appliedOutput.requestedLocalLinear;
             Vector3 appliedLinear = state.appliedOutput.appliedLocalLinear;
             Vector3 requestedAngular = state.appliedOutput.requestedLocalAngular;
             Vector3 appliedAngular = state.appliedOutput.appliedLocalAngular;
 
-            leftText.text =
-                "--- FLIGHT ---\n" +
-                $"VIEW (V): {viewModel.viewMode}\n" +
-                (viewModel.viewMode == "EXTERNAL"
-                    ? $"EXT CAM Pan/Tilt/Dist: {viewModel.externalPanDegrees:0} / {viewModel.externalTiltDegrees:0} / {viewModel.externalDistance:0}\n"
-                    : string.Empty) +
-                $"ASSIST (F): {state.assistMode}\n" +
-                $"BOOST: {(state.boostActive ? "ON" : "OFF")}\n" +
-                $"FINE (G): {(state.fineControlActive ? "ON" : "OFF")}\n" +
-                $"SPEED: {speed:0.0} m/s\n" +
-                $"MASS: {state.currentMassKg:0} kg\n" +
-                $"FUEL: {state.remainingFuelKg:0.0} kg\n" +
-                $"HYPR: {state.remainingHypergolicKg:0.0} kg\n" +
-                $"CAP BLOCK: {(state.appliedOutput.linearSpeedCapped ? "LINEAR" : "none")}\n" +
-                $"RES BLOCK: {(state.appliedOutput.mainEngineFuelBlocked ? "FUEL " : string.Empty)}{(state.appliedOutput.hypergolicBlocked ? "HYPR" : string.Empty)}\n" +
-                $"BRAKE: {(input.brake ? "ON" : "OFF")}";
-
-            rightText.text =
+            thrustDebugText.text =
                 "--- THRUST ---\n" +
                 $"REQ LIN: {requestedLinear.x:+0.00;-0.00;+0.00} {requestedLinear.y:+0.00;-0.00;+0.00} {requestedLinear.z:+0.00;-0.00;+0.00}\n" +
                 $"APL LIN: {appliedLinear.x:+0.0;-0.0;+0.0} {appliedLinear.y:+0.0;-0.0;+0.0} {appliedLinear.z:+0.0;-0.0;+0.0}\n" +

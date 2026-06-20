@@ -93,6 +93,8 @@ namespace FlightModel
             SetAxisValue(ref command.yaw, ShipControlAxis.Yaw);
             SetAxisValue(ref command.roll, ShipControlAxis.Roll);
             command.firePrimary = IsFireButtonPressed();
+            command.boost = IsBoostButtonPressed();
+            command.brake = IsBrakeButtonPressed();
             return command;
         }
 
@@ -100,6 +102,8 @@ namespace FlightModel
         public float GetCameraTilt() => ReadBoundAxis(ShipControlAxis.CameraTilt);
 
         public bool IsFireButtonPressed() => ReadBoundButton(bindings.firePrimary);
+        public bool IsBoostButtonPressed() => ReadBoundButton(bindings.boost);
+        public bool IsBrakeButtonPressed() => ReadBoundButton(bindings.brake);
 
         public float GetLiveAxisValue(HardwareAxisBinding binding) => ReadAxisBinding(binding);
 

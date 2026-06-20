@@ -7,16 +7,23 @@ namespace FlightModel
     {
         [SerializeField] Transform cog;
         [SerializeField] Transform fpvCameraNode;
-        [SerializeField] Transform gunNode1;
-        [SerializeField] Transform gunNode2;
+        [SerializeField] Transform[] gunNodes;
         [SerializeField] Transform[] rcsNodes;
         [SerializeField] Transform[] engineNodes;
         [SerializeField] Vector3 markerActionAxisLocal = Vector3.up;
 
         public Transform Cog => cog;
         public Transform FpvCameraNode => fpvCameraNode;
-        public Transform GunNode1 => gunNode1;
-        public Transform GunNode2 => gunNode2;
+
+        /// <summary>All gun node transforms, auto-discovered by name prefix.</summary>
+        public IReadOnlyList<Transform> GunNodes => gunNodes;
+
+        /// <summary>Backward-compat: first gun node, or null.</summary>
+        public Transform GunNode1 => gunNodes != null && gunNodes.Length > 0 ? gunNodes[0] : null;
+
+        /// <summary>Backward-compat: second gun node, or null.</summary>
+        public Transform GunNode2 => gunNodes != null && gunNodes.Length > 1 ? gunNodes[1] : null;
+
         public IReadOnlyList<Transform> RcsNodes => rcsNodes;
         public IReadOnlyList<Transform> EngineNodes => engineNodes;
         public Vector3 MarkerActionAxisLocal => markerActionAxisLocal;
@@ -35,8 +42,16 @@ namespace FlightModel
 
             cog ??= root.name is "uwing" or "uwing2" or "COG" ? root : ShipHierarchyUtility.FindChildRecursive(root, "uwing", "uwing2", "COG");
             fpvCameraNode ??= ShipHierarchyUtility.FindChildRecursive(root, "node_camera_fpv");
-            gunNode1 ??= ShipHierarchyUtility.FindChildRecursive(root, "node_gun1");
-            gunNode2 ??= ShipHierarchyUtility.FindChildRecursive(root, "node_gun2");
+
+            if (gunNodes == null || gunNodes.Length == 0)
+            {
+                var foundGuns = new List<Transform>();
+                ShipHierarchyUtility.CollectByNamePrefix(root, "node_gun", foundGuns);
+                if (foundGuns.Count > 0)
+                {
+                    gunNodes = foundGuns.ToArray();
+                }
+            }
 
             if (rcsNodes == null || rcsNodes.Length == 0)
             {
@@ -66,7 +81,7 @@ namespace FlightModel
                 }
             }
 
-            return fpvCameraNode != null && gunNode1 != null && gunNode2 != null;
+            return fpvCameraNode != null && gunNodes != null && gunNodes.Length > 0;
         }
 
         void OnValidate()
@@ -81,14 +96,9 @@ namespace FlightModel
                 Debug.LogWarning($"{name}: missing FPV camera node.", this);
             }
 
-            if (gunNode1 == null)
+            if (gunNodes == null || gunNodes.Length == 0)
             {
-                Debug.LogWarning($"{name}: missing gun node 1.", this);
-            }
-
-            if (gunNode2 == null)
-            {
-                Debug.LogWarning($"{name}: missing gun node 2.", this);
+                Debug.LogWarning($"{name}: no gun nodes wired.", this);
             }
         }
     }

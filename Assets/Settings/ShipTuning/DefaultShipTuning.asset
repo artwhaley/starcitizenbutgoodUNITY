@@ -13,26 +13,26 @@ MonoBehaviour:
   m_Name: DefaultShipTuning
   m_EditorClassIdentifier: Assembly-CSharp::FlightModel.ShipTuning
   dryMassKg: 10000
-  mainEngineForwardAccel: 600
-  maneuverForwardAccel: 600
-  reverseAccel: 600
-  rightAccel: 350
-  leftAccel: 350
-  upAccel: 350
-  downAccel: 350
-  pitchPositiveAccel: 4.5
-  pitchNegativeAccel: 4.5
-  yawPositiveAccel: 4.5
-  yawNegativeAccel: 4.5
-  rollPositiveAccel: 4.5
-  rollNegativeAccel: 4.5
-  maxLinearSpeedMps: 800
-  boostMaxLinearSpeedMps: 1400
-  boostAccelMultiplier: 1.75
-  maxPitchSpeedRad: 2
-  maxYawSpeedRad: 2
+  mainEngineForwardAccel: 60
+  maneuverForwardAccel: 20
+  reverseAccel: 20
+  rightAccel: 20
+  leftAccel: 20
+  upAccel: 15
+  downAccel: 15
+  pitchPositiveAccel: 2
+  pitchNegativeAccel: 2
+  yawPositiveAccel: 2
+  yawNegativeAccel: 2
+  rollPositiveAccel: 2
+  rollNegativeAccel: 2
+  maxLinearSpeedMps: 150
+  boostMaxLinearSpeedMps: 200
+  boostAccelMultiplier: 1.25
+  maxPitchSpeedRad: 3
+  maxYawSpeedRad: 3
   maxRollSpeedRad: 3
-  boostAngularSpeedMultiplier: 1.75
+  boostAngularSpeedMultiplier: 1.25
   fineControlLinearAccelMultiplier: 0.25
   fineControlMaxLinearSpeedMps: 50
   fineControlAngularAccelMultiplier: 0.25
@@ -40,7 +40,7 @@ MonoBehaviour:
   hypergolicCapacityKg: 500
   fuelBurnRatePerNewtonSecond: 0.000001
   hypergolicBurnRatePerNewtonSecond: 0.000002
-  attitudeAssistResponsiveness: 2
-  coupledAssistResponsiveness: 1.5
-  frameLockAssistResponsiveness: 1.5
+  attitudeAssistResponsiveness: 4
+  coupledAssistResponsiveness: 4
+  frameLockAssistResponsiveness: 4
   brakeResponsiveness: 4

@@ -23,6 +23,9 @@ namespace FlightModel
         public event Action ToggleCameraRequested;
         public event Action ToggleBindingsPanelRequested;
         public event Action ToggleTuningOverlayRequested;
+        public event Action ToggleDockingModeRequested;
+        public event Action UndockRequested;
+        public event Action ToggleDebugOverlayRequested;
 
         public void SetJoystickProvider(JoystickInputProvider provider) => joystick = provider;
 
@@ -71,6 +74,21 @@ namespace FlightModel
                 ToggleTuningOverlayRequested?.Invoke();
             }
 
+            if (keyboardMouse.WasToggleDockingModePressedThisFrame())
+            {
+                ToggleDockingModeRequested?.Invoke();
+            }
+
+            if (keyboardMouse.WasUndockPressedThisFrame())
+            {
+                UndockRequested?.Invoke();
+            }
+
+            if (keyboardMouse.WasToggleDebugOverlayPressedThisFrame())
+            {
+                ToggleDebugOverlayRequested?.Invoke();
+            }
+
             if (keyboardMouse.WasToggleFineControlPressedThisFrame())
             {
                 fineControlModeActive = !fineControlModeActive;
@@ -97,6 +115,8 @@ namespace FlightModel
                 command.pitch = MergeAxis(hardware.pitch, command.pitch);
                 command.yaw = MergeAxis(hardware.yaw, command.yaw);
                 command.roll = MergeAxis(hardware.roll, command.roll);
+                command.boost = hardware.boost || command.boost;
+                command.brake = hardware.brake || command.brake;
                 command.firePrimary = hardware.firePrimary || command.firePrimary;
             }
 

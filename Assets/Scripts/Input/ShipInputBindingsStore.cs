@@ -5,7 +5,7 @@ namespace FlightModel
 {
     public static class ShipInputBindingsStore
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
         static string FilePath => Path.Combine(Application.persistentDataPath, "ship_input_bindings.json");
 
         public static ShipInputBindingsData Load()
@@ -43,6 +43,7 @@ namespace FlightModel
         {
             changed = false;
             EnsureAxisArray(data, ref changed);
+            EnsureButtonBindings(data, ref changed);
 
             if (data.schemaVersion < 2)
             {
@@ -90,6 +91,27 @@ namespace FlightModel
                     data.axisBindings[i].calibration = new AxisCalibration();
                     changed = true;
                 }
+            }
+        }
+
+        static void EnsureButtonBindings(ShipInputBindingsData data, ref bool changed)
+        {
+            if (data.firePrimary == null)
+            {
+                data.firePrimary = new HardwareButtonBinding();
+                changed = true;
+            }
+
+            if (data.boost == null)
+            {
+                data.boost = new HardwareButtonBinding();
+                changed = true;
+            }
+
+            if (data.brake == null)
+            {
+                data.brake = new HardwareButtonBinding();
+                changed = true;
             }
         }
     }

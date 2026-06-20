@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 9060592477237042184}
   - component: {fileID: 2554267658726217608}
   - component: {fileID: 1985609449115154467}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Debris2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -124,7 +124,7 @@ GameObject:
   - component: {fileID: 8395373433624029824}
   - component: {fileID: 9193970470842062955}
   - component: {fileID: 1387551133902591973}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RingGate_3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -235,7 +235,7 @@ GameObject:
   - component: {fileID: 3969061524780390670}
   - component: {fileID: 8823224452083030430}
   - component: {fileID: 6337724205062689164}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: DockingZone
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -304,7 +304,7 @@ GameObject:
   - component: {fileID: 5505209635386773160}
   - component: {fileID: 5271050702605296975}
   - component: {fileID: 3364804735115663204}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Debris3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -413,7 +413,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8784711034214466542}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: PF_TestArena
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -461,7 +461,7 @@ GameObject:
   - component: {fileID: 5220147252444580000}
   - component: {fileID: 3474532126409236406}
   - component: {fileID: 2772088766973270444}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RingGate_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -573,7 +573,7 @@ GameObject:
   - component: {fileID: 4682858998105698455}
   - component: {fileID: 1351630844204125445}
   - component: {fileID: 6214667574024764707}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RingGate_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -685,7 +685,7 @@ GameObject:
   - component: {fileID: 6240681918572252951}
   - component: {fileID: 4910229000459348205}
   - component: {fileID: 2773510160219952228}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RingGate_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -797,7 +797,7 @@ GameObject:
   - component: {fileID: 6562409745442557791}
   - component: {fileID: 2317820132423241086}
   - component: {fileID: 570423525729102393}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: ApproachMarker2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -909,7 +909,7 @@ GameObject:
   - component: {fileID: 3877961018071648255}
   - component: {fileID: 7317157373558332666}
   - component: {fileID: 4556018462271603776}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: ApproachMarker3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1021,7 +1021,7 @@ GameObject:
   - component: {fileID: 5669176376523330524}
   - component: {fileID: 4195356615211217698}
   - component: {fileID: 4185259403075209389}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: ApproachMarker1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1133,7 +1133,7 @@ GameObject:
   - component: {fileID: 1593045019809052056}
   - component: {fileID: 5602056244505776474}
   - component: {fileID: 8810789926996139172}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: StationBlock
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1245,7 +1245,7 @@ GameObject:
   - component: {fileID: 2628149205839526245}
   - component: {fileID: 3589686429088725473}
   - component: {fileID: 2320638631579124984}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FloorGrid
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1357,7 +1357,7 @@ GameObject:
   - component: {fileID: 1096842415750646803}
   - component: {fileID: 2911463627135753402}
   - component: {fileID: 1060213122002137446}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Debris1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
